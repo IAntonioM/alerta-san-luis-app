@@ -28,7 +28,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.0),
+            color: Colors.white,
           ),
           child: SafeArea(
             child: Padding(

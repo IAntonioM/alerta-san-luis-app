@@ -143,7 +143,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
-                                    color: const Color(0xFF1976D2).withOpacity(0.1),
+                                    color: const Color(0xFF1976D2),
                                     shape: BoxShape.circle,
                                   ),
                                   child: const Icon(
@@ -306,7 +306,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
-                        shadowColor: const Color(0xFF1976D2).withOpacity(0.3),
+                        shadowColor: const Color(0xFF1976D2),
                       ),
                       child: const Text(
                         'Enviar Reporte',
