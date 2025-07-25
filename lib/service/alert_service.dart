@@ -1,7 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
-import '../models/alert_model.dart';
 import '../models/api_response_model.dart';
 import 'api_service.dart';
 
@@ -12,7 +10,7 @@ class AlertService {
     required double latitude,
     required double longitude,
     required String userId,
-    required int citizenId,
+    required String citizenId,
     required String email,
     required String phone,
     File? imageFile,

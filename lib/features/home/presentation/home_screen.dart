@@ -37,7 +37,7 @@ class HomeScreen extends StatelessWidget {
     // - Llamar a API de logout
     
     // Ejemplo de navegación al login
-    Navigator.of(context).pushReplacementNamed('/login');
+    Navigator.of(context).pushReplacementNamed('/splash');
     
     // O si usas Navigator.pushAndRemoveUntil para limpiar todo el stack:
     // Navigator.of(context).pushAndRemoveUntil(
@@ -52,7 +52,7 @@ class HomeScreen extends StatelessWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.transparent,
+          backgroundColor: const Color.fromARGB(255, 2, 14, 179),
           elevation: 0,
           toolbarHeight: 120,
           title: Row(

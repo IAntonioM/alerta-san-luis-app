@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../utils/responsive_helper.dart';
-import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'dart:io';
+import 'package:geolocator/geolocator.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../service/alert_service.dart';
+import '../../../utils/responsive_helper.dart';
+import '../../../utils/user_storage_service.dart';
 
 class IncidenciaFormScreen extends StatefulWidget {
   final String tipo;
@@ -17,6 +20,38 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
   final TextEditingController descripcionController = TextEditingController();
   double gravedad = 0;
   File? _imagenSeleccionada;
+  bool _isLoading = false;
+  String? _userId;
+  String? _email;
+  String? _phone;
+  String? _nombre;
+  String? _direccion;
+
+  @override
+  void initState() {
+    super.initState();
+    _initUserData();
+  }
+
+  Future<void> _initUserData() async {
+    try {
+      final user = await UserStorageService.getUser();
+      if (user != null) {
+        setState(() {
+          _userId = user.id;
+          _email = user.correo;
+          _phone = user.telefono;
+          _nombre = user.nombre;
+          _direccion = user.direccion;
+        });
+        print('Datos de usuario cargados: $_userId, $_email');
+      } else {
+        print('No se encontró usuario guardado');
+      }
+    } catch (e) {
+      print('Error al cargar datos del usuario: $e');
+    }
+  }
 
   Future<void> _seleccionarImagen() async {
     final picker = ImagePicker();
@@ -29,27 +64,152 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
     }
   }
 
-  void _enviarAlerta() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Alerta "${widget.tipo}" enviada',
-          style: TextStyle(
-            fontSize: ResponsiveHelper.getBodyFontSize(context),
+  Future<Position?> _getCurrentLocation() async {
+    try {
+      // Verificar si el servicio de ubicación está habilitado
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        // Mostrar diálogo para habilitar ubicación
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Por favor, habilita el servicio de ubicación en la configuración'),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+        return null;
+      }
+
+      // Verificar permisos
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Permisos de ubicación denegados')),
+            );
+          }
+          return null;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                  'Permisos de ubicación denegados permanentemente. Ve a configuración para habilitarlos.'),
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+        return null;
+      }
+
+      // Obtener posición con configuración específica
+      return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+    } catch (e) {
+      print('Error obteniendo ubicación: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Error obteniendo ubicación: ${e.toString()}')),
+        );
+      }
+      return null;
+    }
+  }
+
+  String? _getImageFileName() {
+    if (_imagenSeleccionada == null) return null;
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    return 'alerta_${widget.tipo}_$timestamp.jpg';
+  }
+
+  Future<void> _enviarAlerta() async {
+    if (_isLoading) return;
+
+    // Validar que los datos del usuario estén disponibles
+    if (_userId == null || _email == null || _phone == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: Datos de usuario no disponibles')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Obtener ubicación actual
+      final position = await _getCurrentLocation();
+      if (position == null) {
+        throw Exception('No se pudo obtener la ubicación');
+      }
+
+      // Mapear el tipo de incidencia a categoryId (necesitas definir este mapeo)
+      final categoryId = _mapTipoToCategoryId(widget.tipo);
+
+      // Llamar al servicio
+      final response = await AlertService.registerAlert(
+        categoryId: categoryId, // usar el categoryId mapeado, no hardcodeado
+        description: descripcionController.text,
+        latitude: position.latitude,
+        longitude: position.longitude,
+        userId: _userId!,
+        citizenId: _userId!, // usar _userId como citizenId ya que son lo mismo
+        email: _email!,
+        phone: _phone!,
+        imageFile: _imagenSeleccionada,
+        fileName: _getImageFileName(),
+      );
+
+      print(response);
+
+      if (response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.data ?? 'Alerta enviada exitosamente'),
+            backgroundColor: const Color(0xFF4CAF50),
           ),
+        );
+        Navigator.pop(context);
+      } else {
+        throw Exception(response.error);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
         ),
-        backgroundColor: const Color(0xFF1976D2),
-        behavior: SnackBarBehavior.floating,
-        margin: ResponsiveHelper.getScreenPadding(context),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(
-            ResponsiveHelper.getBorderRadius(context, base: 12),
-          ),
-        ),
-        duration: ResponsiveHelper.getAnimationDuration(slow: true),
-      ),
-    );
-    Navigator.pop(context);
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  int _mapTipoToCategoryId(String tipo) {
+    switch (tipo.toLowerCase()) {
+      case 'alumbrado público':
+        return 1;
+      case 'limpieza pública':
+        return 2;
+      case 'seguridad ciudadana':
+        return 3;
+      // Agrega más casos según tus categorías
+      default:
+        return 1; // Categoría por defecto
+    }
   }
 
   @override
@@ -160,9 +320,9 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
-            
+
             // Layout adaptativo basado en el tipo de dispositivo
-            if (ResponsiveHelper.shouldStackHorizontally(context) && 
+            if (ResponsiveHelper.shouldStackHorizontally(context) &&
                 ResponsiveHelper.getScreenWidth(context) > 800)
               _buildDesktopLayout()
             else
@@ -239,7 +399,6 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
           ),
         ),
         SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
-        
         GestureDetector(
           onTap: _seleccionarImagen,
           child: AnimatedContainer(
@@ -250,7 +409,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
             decoration: BoxDecoration(
               color: Colors.grey.shade50,
               border: Border.all(
-                color: _imagenSeleccionada != null 
+                color: _imagenSeleccionada != null
                     ? const Color(0xFF1976D2).withOpacity(0.3)
                     : Colors.grey.shade300,
                 width: _imagenSeleccionada != null ? 2.0 : 1.5,
@@ -260,7 +419,8 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
                   ? [
                       BoxShadow(
                         color: const Color(0xFF1976D2).withOpacity(0.1),
-                        blurRadius: ResponsiveHelper.getElevation(context, base: 8),
+                        blurRadius:
+                            ResponsiveHelper.getElevation(context, base: 8),
                         offset: const Offset(0, 2),
                       ),
                     ]
@@ -303,7 +463,8 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
           ),
           textAlign: TextAlign.center,
         ),
-        if (ResponsiveHelper.isTablet(context) || ResponsiveHelper.isDesktop(context))
+        if (ResponsiveHelper.isTablet(context) ||
+            ResponsiveHelper.isDesktop(context))
           Padding(
             padding: EdgeInsets.only(
               top: ResponsiveHelper.getSpacing(context, base: 8),
@@ -384,7 +545,6 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
           ),
         ),
         SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
-        
         Container(
           height: textFieldHeight,
           decoration: BoxDecoration(
@@ -439,7 +599,6 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
           ),
         ),
         SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
-        
         Container(
           padding: EdgeInsets.symmetric(
             vertical: ResponsiveHelper.getSpacing(context, base: 20),
@@ -449,7 +608,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
             color: Colors.grey.shade50,
             borderRadius: ResponsiveHelper.getImageBorderRadius(context),
             border: Border.all(
-              color: gravedad > 0 
+              color: gravedad > 0
                   ? const Color(0xFFFFA726).withOpacity(0.3)
                   : Colors.grey.shade300,
               width: gravedad > 0 ? 2.0 : 1.5,
@@ -465,10 +624,13 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
                         color: const Color(0xFF666666),
                       ),
                     ),
-                    SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
+                    SizedBox(
+                        height: ResponsiveHelper.getFormFieldSpacing(context)),
                     _buildRatingBar(),
                     if (gravedad > 0) ...[
-                      SizedBox(height: ResponsiveHelper.getSpacing(context, base: 12)),
+                      SizedBox(
+                          height:
+                              ResponsiveHelper.getSpacing(context, base: 12)),
                       _buildPriorityLabel(),
                     ],
                   ],
@@ -483,18 +645,22 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
                           Text(
                             'Seleccionar prioridad:',
                             style: TextStyle(
-                              fontSize: ResponsiveHelper.getBodyFontSize(context),
+                              fontSize:
+                                  ResponsiveHelper.getBodyFontSize(context),
                               color: const Color(0xFF666666),
                             ),
                           ),
                           if (gravedad > 0) ...[
-                            SizedBox(height: ResponsiveHelper.getSpacing(context, base: 4)),
+                            SizedBox(
+                                height: ResponsiveHelper.getSpacing(context,
+                                    base: 4)),
                             _buildPriorityLabel(),
                           ],
                         ],
                       ),
                     ),
-                    SizedBox(width: ResponsiveHelper.getSpacing(context, base: 16)),
+                    SizedBox(
+                        width: ResponsiveHelper.getSpacing(context, base: 16)),
                     _buildRatingBar(),
                   ],
                 ),
@@ -553,7 +719,8 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
       ),
       itemBuilder: (context, index) => Icon(
         Icons.star_rounded,
-        color: index < gravedad ? const Color(0xFFFFA726) : Colors.grey.shade300,
+        color:
+            index < gravedad ? const Color(0xFFFFA726) : Colors.grey.shade300,
       ),
       onRatingUpdate: (rating) {
         setState(() {
@@ -566,8 +733,9 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
   }
 
   Widget _buildSubmitButton() {
-    final isFormValid = descripcionController.text.isNotEmpty && gravedad > 0;
-    
+    final isFormValid =
+        descripcionController.text.isNotEmpty && gravedad > 0 && !_isLoading;
+
     return AnimatedContainer(
       duration: ResponsiveHelper.getAnimationDuration(),
       width: double.infinity,
@@ -575,40 +743,49 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
       child: ElevatedButton(
         onPressed: isFormValid ? _enviarAlerta : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isFormValid 
-              ? const Color(0xFF1976D2) 
-              : Colors.grey.shade400,
+          backgroundColor:
+              isFormValid ? const Color(0xFF1976D2) : Colors.grey.shade400,
           foregroundColor: Colors.white,
-          elevation: isFormValid 
-              ? ResponsiveHelper.getElevation(context, base: 4) 
-              : 0,
+          elevation:
+              isFormValid ? ResponsiveHelper.getElevation(context, base: 4) : 0,
           shape: RoundedRectangleBorder(
             borderRadius: ResponsiveHelper.getImageBorderRadius(context),
           ),
           shadowColor: const Color(0xFF1976D2),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.send_rounded,
-              size: ResponsiveHelper.getIconSize(context, base: 18),
-            ),
-            SizedBox(width: ResponsiveHelper.getSpacing(context, base: 8)),
-            Text(
-              ResponsiveHelper.responsiveValue(
-                context,
-                mobile: 'Enviar',
-                desktop: 'Enviar Reporte',
+        child: _isLoading
+            ? SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.send_rounded,
+                    size: ResponsiveHelper.getIconSize(context, base: 18),
+                  ),
+                  SizedBox(
+                      width: ResponsiveHelper.getSpacing(context, base: 8)),
+                  Text(
+                    ResponsiveHelper.responsiveValue(
+                      context,
+                      mobile: 'Enviar',
+                      desktop: 'Enviar Reporte',
+                    ),
+                    style: TextStyle(
+                      fontSize:
+                          ResponsiveHelper.getButtonFontSize(context, base: 16),
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
               ),
-              style: TextStyle(
-                fontSize: ResponsiveHelper.getButtonFontSize(context, base: 16),
-                fontWeight: FontWeight.w500,
-                letterSpacing: 0.5,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

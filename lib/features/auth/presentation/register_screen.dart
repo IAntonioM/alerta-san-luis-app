@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../utils/responsive_helper.dart';
+import '../../../service/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -27,6 +28,67 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _addressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _handleRegister() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (!_acceptedTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debes aceptar los términos y servicios'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final response = await AuthService.registerCitizen(
+        correo: _emailController.text.trim(),
+        telefono: _phoneController.text.trim(),
+        nombre: _fullNameController.text.trim(),
+        direccion: _addressController.text.trim(),
+        numDoc: _dniController.text.trim(),
+      );
+
+      if (mounted) {
+        if (response.success) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                  'Registro exitoso. Bienvenido ${response.data?.nombre ?? ''}'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.error ?? 'Error en el registro'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error de conexión: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
   }
 
   // Estilo común para los campos de texto
@@ -128,51 +190,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return null;
   }
 
-  // Método para manejar el registro
-  Future<void> _handleRegister() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+  List<Widget> _buildFormFields() {
+    final spacing = ResponsiveHelper.getFormFieldSpacing(context);
 
-    if (!_acceptedTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Debes aceptar los términos y servicios'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    return [
+      _buildTextField(
+        controller: _fullNameController,
+        hintText: 'Nombres completos',
+        validator: _validateFullName,
+      ),
+      SizedBox(height: spacing),
 
-    setState(() => _isLoading = true);
+      _buildTextField(
+        controller: _phoneController,
+        hintText: 'Teléfono',
+        keyboardType: TextInputType.phone,
+        validator: _validatePhone,
+      ),
+      SizedBox(height: spacing),
 
-    try {
-      // Aquí iría la lógica de registro
-      await Future.delayed(const Duration(seconds: 2)); // Simulación
-      
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Registro exitoso'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error en el registro: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-    }
+      _buildTextField(
+        controller: _dniController,
+        hintText: 'DNI o C.E.',
+        validator: _validateDNI,
+      ),
+      SizedBox(height: spacing),
+
+      _buildTextField(
+        controller: _emailController,
+        hintText: 'Correo electrónico',
+        keyboardType: TextInputType.emailAddress,
+        validator: _validateEmail,
+      ),
+      SizedBox(height: spacing),
+
+      _buildTextField(
+        controller: _addressController,
+        hintText: 'Dirección',
+        validator: _validateAddress,
+      ),
+    ];
   }
 
   @override
@@ -186,7 +243,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             children: [
               // Header con logo y botón de retroceso
               _buildHeader(),
-              
+
               // Formulario
               Expanded(
                 child: Form(
@@ -199,23 +256,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       children: [
                         // Campos del formulario
                         ..._buildFormFields(),
-                        
-                        SizedBox(height: ResponsiveHelper.getFormSpacing(context)),
-                        
+
+                        SizedBox(
+                            height: ResponsiveHelper.getFormSpacing(context)),
+
                         // Checkbox de términos
                         _buildTermsCheckbox(),
-                        
-                        SizedBox(height: ResponsiveHelper.getFormSpacing(context)),
-                        
+
+                        SizedBox(
+                            height: ResponsiveHelper.getFormSpacing(context)),
+
                         // Botón de registro
                         _buildRegisterButton(),
-                        
-                        SizedBox(height: ResponsiveHelper.getSpacing(context, base: 24)),
-                        
+
+                        SizedBox(
+                            height:
+                                ResponsiveHelper.getSpacing(context, base: 24)),
+
                         // Enlace a login
                         _buildLoginLink(),
-                        
-                        SizedBox(height: ResponsiveHelper.getSpacing(context, base: 32)),
+
+                        SizedBox(
+                            height:
+                                ResponsiveHelper.getSpacing(context, base: 32)),
                       ],
                     ),
                   ),
@@ -255,12 +318,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ),
               ),
-              SizedBox(width: ResponsiveHelper.getIconSize(context) + 16), // Balance
+              SizedBox(
+                  width: ResponsiveHelper.getIconSize(context) + 16), // Balance
             ],
           ),
-          
+
           SizedBox(height: ResponsiveHelper.getSpacing(context, base: 20)),
-          
+
           // Título
           Text(
             'Registro',
@@ -274,48 +338,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ],
       ),
     );
-  }
-
-  List<Widget> _buildFormFields() {
-    final spacing = ResponsiveHelper.getFormFieldSpacing(context);
-    
-    return [
-      _buildTextField(
-        controller: _fullNameController,
-        hintText: 'Nombres completos',
-        validator: _validateFullName,
-      ),
-      SizedBox(height: spacing),
-      
-      _buildTextField(
-        controller: _phoneController,
-        hintText: 'Teléfono',
-        keyboardType: TextInputType.phone,
-        validator: _validatePhone,
-      ),
-      SizedBox(height: spacing),
-      
-      _buildTextField(
-        controller: _dniController,
-        hintText: 'DNI o C.E.',
-        validator: _validateDNI,
-      ),
-      SizedBox(height: spacing),
-      
-      _buildTextField(
-        controller: _emailController,
-        hintText: 'Correo electrónico',
-        keyboardType: TextInputType.emailAddress,
-        validator: _validateEmail,
-      ),
-      SizedBox(height: spacing),
-      
-      _buildTextField(
-        controller: _addressController,
-        hintText: 'Dirección',
-        validator: _validateAddress,
-      ),
-    ];
   }
 
   Widget _buildTermsCheckbox() {
@@ -345,7 +367,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       child: ElevatedButton(
         onPressed: (_acceptedTerms && !_isLoading) ? _handleRegister : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: _acceptedTerms ? const Color(0xFF1976D2) : Colors.grey,
+          backgroundColor:
+              _acceptedTerms ? const Color(0xFF1976D2) : Colors.grey,
           foregroundColor: Colors.white,
           elevation: ResponsiveHelper.getElevation(context),
           shape: RoundedRectangleBorder(
