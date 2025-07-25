@@ -52,7 +52,7 @@ class HomeScreen extends StatelessWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color(0xFF1976D2),
+          backgroundColor: Colors.transparent,
           elevation: 0,
           toolbarHeight: 120,
           title: Row(

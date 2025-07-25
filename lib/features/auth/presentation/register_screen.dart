@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../utils/responsive_helper.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -8,340 +9,381 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final fullNameController = TextEditingController();
-  final phoneController = TextEditingController();
-  final dniController = TextEditingController();
-  final emailController = TextEditingController();
-  final addressController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _fullNameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _dniController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _addressController = TextEditingController();
 
-  bool acceptedTerms = false;
+  bool _acceptedTerms = false;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _fullNameController.dispose();
+    _phoneController.dispose();
+    _dniController.dispose();
+    _emailController.dispose();
+    _addressController.dispose();
+    super.dispose();
+  }
+
+  // Estilo común para los campos de texto
+  InputDecoration _getInputDecoration(String hintText) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: TextStyle(
+        color: Colors.white70,
+        fontSize: ResponsiveHelper.getBodyFontSize(context),
+      ),
+      border: const UnderlineInputBorder(
+        borderSide: BorderSide(color: Colors.white70),
+      ),
+      focusedBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: Colors.white, width: 2),
+      ),
+      enabledBorder: const UnderlineInputBorder(
+        borderSide: BorderSide(color: Colors.white70),
+      ),
+      contentPadding: EdgeInsets.symmetric(
+        vertical: ResponsiveHelper.getSpacing(context, base: 16),
+      ),
+    );
+  }
+
+  // Estilo común para el texto de los campos
+  TextStyle _getTextFieldStyle() {
+    return TextStyle(
+      fontSize: ResponsiveHelper.getBodyFontSize(context),
+      color: Colors.white,
+    );
+  }
+
+  // Widget para crear un campo de texto personalizado
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: _getTextFieldStyle(),
+      decoration: _getInputDecoration(hintText),
+      validator: validator,
+    );
+  }
+
+  // Validadores
+  String? _validateFullName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Por favor ingresa tu nombre completo';
+    }
+    if (value.trim().length < 2) {
+      return 'El nombre debe tener al menos 2 caracteres';
+    }
+    return null;
+  }
+
+  String? _validatePhone(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Por favor ingresa tu teléfono';
+    }
+    if (value.trim().length < 9) {
+      return 'El teléfono debe tener al menos 9 dígitos';
+    }
+    return null;
+  }
+
+  String? _validateDNI(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Por favor ingresa tu DNI o C.E.';
+    }
+    if (value.trim().length < 8) {
+      return 'El DNI debe tener al menos 8 caracteres';
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Por favor ingresa tu correo electrónico';
+    }
+    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+    if (!emailRegex.hasMatch(value.trim())) {
+      return 'Por favor ingresa un correo válido';
+    }
+    return null;
+  }
+
+  String? _validateAddress(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Por favor ingresa tu dirección';
+    }
+    if (value.trim().length < 10) {
+      return 'Por favor ingresa una dirección más específica';
+    }
+    return null;
+  }
+
+  // Método para manejar el registro
+  Future<void> _handleRegister() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    if (!_acceptedTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Debes aceptar los términos y servicios'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // Aquí iría la lógica de registro
+      await Future.delayed(const Duration(seconds: 2)); // Simulación
+      
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Registro exitoso'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error en el registro: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          image: DecorationImage(
-            image: AssetImage('assets/imgs/background-login.jpg'),
-            fit: BoxFit.cover,
-          ),
-        ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
-              child: Column(
-                children: [
-                  // Top section with logo and back button
-                  Expanded(
-                    flex: 1,
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: ResponsiveHelper.centeredContent(
+          context,
+          Column(
+            children: [
+              // Header con logo y botón de retroceso
+              _buildHeader(),
+              
+              // Formulario
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(
+                      vertical: ResponsiveHelper.getVerticalPadding(context),
+                    ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Back button and logo row
-                        Row(
-                          children: [
-                            IconButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              icon: const Icon(
-                                Icons.arrow_back,
-                                color: Colors.white,
-                                size: 24,
-                              ),
-                            ),
-                            Expanded(
-                              child: Center(
-                                child: Image.asset(
-                                  'assets/imgs/logo.png',
-                                  height: 80,
-                                  fit: BoxFit.contain,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 48), // Balance the back button
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        // Title
-                        const Text(
-                          'Registro',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w300,
-                            color: Color.fromARGB(255, 255, 255, 255),
-                            letterSpacing: 0.5,
-                          ),
-                        ),
+                        // Campos del formulario
+                        ..._buildFormFields(),
+                        
+                        SizedBox(height: ResponsiveHelper.getFormSpacing(context)),
+                        
+                        // Checkbox de términos
+                        _buildTermsCheckbox(),
+                        
+                        SizedBox(height: ResponsiveHelper.getFormSpacing(context)),
+                        
+                        // Botón de registro
+                        _buildRegisterButton(),
+                        
+                        SizedBox(height: ResponsiveHelper.getSpacing(context, base: 24)),
+                        
+                        // Enlace a login
+                        _buildLoginLink(),
+                        
+                        SizedBox(height: ResponsiveHelper.getSpacing(context, base: 32)),
                       ],
                     ),
                   ),
-
-                  // Form section
-                  Expanded(
-                    flex: 4,
-                    child: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          // Nombres completos
-                          TextField(
-                            controller: fullNameController,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Color.fromARGB(255, 255, 255, 255),
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Nombres completos',
-                              hintStyle: TextStyle(
-                                color: const Color.fromARGB(255, 255, 255, 255),
-                                fontSize: 16,
-                              ),
-                              border: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                ),
-                              ),
-                              focusedBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Color.fromARGB(255, 255, 255, 255),
-                                  width: 2,
-                                ),
-                              ),
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Teléfono
-                          TextField(
-                            controller: phoneController,
-                            keyboardType: TextInputType.phone,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Color.fromARGB(255, 255, 255, 255),
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Teléfono',
-                              hintStyle: TextStyle(
-                                color: const Color.fromARGB(255, 255, 255, 255),
-                                fontSize: 16,
-                              ),
-                              border: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                ),
-                              ),
-                              focusedBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Color.fromARGB(255, 255, 255, 255),
-                                  width: 2,
-                                ),
-                              ),
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // DNI o C.E.
-                          TextField(
-                            controller: dniController,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Color.fromARGB(255, 255, 255, 255),
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'DNI o C.E.',
-                              hintStyle: TextStyle(
-                                color: const Color.fromARGB(255, 255, 255, 255),
-                                fontSize: 16,
-                              ),
-                              border: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                ),
-                              ),
-                              focusedBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Color.fromARGB(255, 255, 255, 255),
-                                  width: 2,
-                                ),
-                              ),
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Correo electrónico
-                          TextField(
-                            controller: emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Color.fromARGB(255, 255, 255, 255),
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Correo electrónico',
-                              hintStyle: TextStyle(
-                                color: const Color.fromARGB(255, 255, 255, 255),
-                                fontSize: 16,
-                              ),
-                              border: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                ),
-                              ),
-                              focusedBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Color.fromARGB(255, 255, 255, 255),
-                                  width: 2,
-                                ),
-                              ),
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Dirección
-                          TextField(
-                            controller: addressController,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Color.fromARGB(255, 255, 255, 255),
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Dirección',
-                              hintStyle: TextStyle(
-                                color: const Color.fromARGB(255, 255, 255, 255),
-                                fontSize: 16,
-                              ),
-                              border: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                ),
-                              ),
-                              focusedBorder: const UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Color.fromARGB(255, 255, 255, 255),
-                                  width: 2,
-                                ),
-                              ),
-                              enabledBorder: UnderlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: const Color.fromARGB(255, 255, 255, 255),
-                                ),
-                              ),
-                              contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                            ),
-                          ),
-
-                          const SizedBox(height: 32),
-
-                          // Checkbox de términos
-                          CheckboxListTile(
-                            value: acceptedTerms,
-                            onChanged: (value) {
-                              setState(() => acceptedTerms = value ?? false);
-                            },
-                            title: const Text(
-                              'Estoy de acuerdo con los Términos y Servicios',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                              ),
-                            ),
-                            checkColor: Colors.white,
-                            activeColor: const Color(0xFF1976D2),
-                            contentPadding: EdgeInsets.zero,
-                          ),
-
-                          const SizedBox(height: 32),
-
-                          // Botón Registrarse
-                          SizedBox(
-                            width: double.infinity,
-                            height: 54,
-                            child: ElevatedButton(
-                              onPressed: acceptedTerms
-                                  ? () {
-                                      // Lógica de registro aquí
-                                      Navigator.pop(context);
-                                    }
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: acceptedTerms 
-                                    ? const Color(0xFF1976D2) 
-                                    : Colors.grey,
-                                foregroundColor: Colors.white,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: const Text(
-                                'Registrarse',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 24),
-
-                          // Enlace a Login
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                            },
-                            child: Text(
-                              '¿Ya tienes cuenta? Iniciar Sesión',
-                              style: TextStyle(
-                                color: const Color.fromARGB(255, 255, 255, 255),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-                ],
+                ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        vertical: ResponsiveHelper.getSpacing(context, base: 20),
+      ),
+      child: Column(
+        children: [
+          // Fila con botón de retroceso y logo
+          Row(
+            children: [
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                  size: ResponsiveHelper.getIconSize(context),
+                ),
+              ),
+              Expanded(
+                child: Center(
+                  child: Image.asset(
+                    'assets/imgs/logo.png',
+                    height: ResponsiveHelper.getResponsiveHeight(context, 80),
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              SizedBox(width: ResponsiveHelper.getIconSize(context) + 16), // Balance
+            ],
+          ),
+          
+          SizedBox(height: ResponsiveHelper.getSpacing(context, base: 20)),
+          
+          // Título
+          Text(
+            'Registro',
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getTitleFontSize(context, base: 28),
+              fontWeight: FontWeight.w300,
+              color: Colors.white,
+              letterSpacing: 0.5,
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildFormFields() {
+    final spacing = ResponsiveHelper.getFormFieldSpacing(context);
+    
+    return [
+      _buildTextField(
+        controller: _fullNameController,
+        hintText: 'Nombres completos',
+        validator: _validateFullName,
+      ),
+      SizedBox(height: spacing),
+      
+      _buildTextField(
+        controller: _phoneController,
+        hintText: 'Teléfono',
+        keyboardType: TextInputType.phone,
+        validator: _validatePhone,
+      ),
+      SizedBox(height: spacing),
+      
+      _buildTextField(
+        controller: _dniController,
+        hintText: 'DNI o C.E.',
+        validator: _validateDNI,
+      ),
+      SizedBox(height: spacing),
+      
+      _buildTextField(
+        controller: _emailController,
+        hintText: 'Correo electrónico',
+        keyboardType: TextInputType.emailAddress,
+        validator: _validateEmail,
+      ),
+      SizedBox(height: spacing),
+      
+      _buildTextField(
+        controller: _addressController,
+        hintText: 'Dirección',
+        validator: _validateAddress,
+      ),
+    ];
+  }
+
+  Widget _buildTermsCheckbox() {
+    return CheckboxListTile(
+      value: _acceptedTerms,
+      onChanged: (value) {
+        setState(() => _acceptedTerms = value ?? false);
+      },
+      title: Text(
+        'Estoy de acuerdo con los Términos y Servicios',
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: ResponsiveHelper.getBodyFontSize(context, base: 14),
+        ),
+      ),
+      checkColor: Colors.white,
+      activeColor: const Color(0xFF1976D2),
+      contentPadding: EdgeInsets.zero,
+      controlAffinity: ListTileControlAffinity.leading,
+    );
+  }
+
+  Widget _buildRegisterButton() {
+    return SizedBox(
+      width: double.infinity,
+      height: ResponsiveHelper.getButtonHeight(context),
+      child: ElevatedButton(
+        onPressed: (_acceptedTerms && !_isLoading) ? _handleRegister : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _acceptedTerms ? const Color(0xFF1976D2) : Colors.grey,
+          foregroundColor: Colors.white,
+          elevation: ResponsiveHelper.getElevation(context),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getBorderRadius(context),
+            ),
+          ),
+        ),
+        child: _isLoading
+            ? SizedBox(
+                height: ResponsiveHelper.getIconSize(context, base: 20),
+                width: ResponsiveHelper.getIconSize(context, base: 20),
+                child: const CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 2,
+                ),
+              )
+            : Text(
+                'Registrarse',
+                style: TextStyle(
+                  fontSize: ResponsiveHelper.getButtonFontSize(context),
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
+                ),
+              ),
+      ),
+    );
+  }
+
+  Widget _buildLoginLink() {
+    return TextButton(
+      onPressed: () => Navigator.pop(context),
+      child: Text(
+        '¿Ya tienes cuenta? Iniciar Sesión',
+        style: TextStyle(
+          color: Colors.white70,
+          fontSize: ResponsiveHelper.getBodyFontSize(context, base: 14),
+          fontWeight: FontWeight.w400,
         ),
       ),
     );

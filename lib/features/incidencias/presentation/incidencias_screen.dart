@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../utils/responsive_helper.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
@@ -31,12 +32,21 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
   void _enviarAlerta() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Alerta "${widget.tipo}" enviada'),
+        content: Text(
+          'Alerta "${widget.tipo}" enviada',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getBodyFontSize(context),
+          ),
+        ),
         backgroundColor: const Color(0xFF1976D2),
         behavior: SnackBarBehavior.floating,
+        margin: ResponsiveHelper.getScreenPadding(context),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(
+            ResponsiveHelper.getBorderRadius(context, base: 12),
+          ),
         ),
+        duration: ResponsiveHelper.getAnimationDuration(slow: true),
       ),
     );
     Navigator.pop(context);
@@ -45,287 +55,567 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(100),
-        child: AppBar(
-          backgroundColor: const Color(0xFF1976D2),
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-            onPressed: () => Navigator.pop(context),
+      backgroundColor: Colors.transparent,
+      appBar: _buildAppBar(),
+      body: _buildBody(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return PreferredSize(
+      preferredSize: Size.fromHeight(
+        ResponsiveHelper.getSliverAppBarHeight(context),
+      ),
+      child: AppBar(
+        backgroundColor: const Color(0xFF1976D2),
+        elevation: ResponsiveHelper.getElevation(context, base: 0),
+        leading: IconButton(
+          icon: Icon(
+            Icons.arrow_back_ios,
+            color: Colors.white,
+            size: ResponsiveHelper.getIconSize(context, base: 20),
           ),
-          flexibleSpace: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 60, right: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Image.asset('assets/imgs/muni_logo.png', height: 50),
-                  Image.asset('assets/imgs/logo.png', height: 40),
-                ],
-              ),
+          onPressed: () => Navigator.pop(context),
+        ),
+        flexibleSpace: SafeArea(
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: ResponsiveHelper.getIconSize(context, base: 60),
+              right: ResponsiveHelper.getHorizontalPadding(context),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Image.asset(
+                  'assets/imgs/muni_logo.png',
+                  height: ResponsiveHelper.getIconSize(context, base: 50),
+                ),
+                Image.asset(
+                  'assets/imgs/logo.png',
+                  height: ResponsiveHelper.getIconSize(context, base: 40),
+                ),
+              ],
             ),
           ),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Header Section
-            Container(
-              width: double.infinity,
-              color: const Color(0xFF1976D2),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  Text(
-                    widget.tipo,
-                    style: const TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w300,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-                  Container(
-                    height: 20,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(30),
-                        topRight: Radius.circular(30),
-                      ),
-                    ),
-                  ),
-                ],
+    );
+  }
+
+  Widget _buildBody() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          _buildHeader(),
+          _buildFormSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      color: const Color(0xFF1976D2),
+      child: Column(
+        children: [
+          SizedBox(height: ResponsiveHelper.getSpacing(context, base: 20)),
+          Text(
+            widget.tipo,
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getTitleFontSize(context, base: 26),
+              fontWeight: FontWeight.w300,
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: ResponsiveHelper.getSpacing(context, base: 30)),
+          Container(
+            height: ResponsiveHelper.getSpacing(context, base: 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(
+                  ResponsiveHelper.getBorderRadius(context, base: 30),
+                ),
+                topRight: Radius.circular(
+                  ResponsiveHelper.getBorderRadius(context, base: 30),
+                ),
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
 
-            // Form Section
-            Container(
+  Widget _buildFormSection() {
+    return Container(
+      color: Colors.white,
+      width: double.infinity,
+      child: ResponsiveHelper.centeredContent(
+        context,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
+            
+            // Layout adaptativo basado en el tipo de dispositivo
+            if (ResponsiveHelper.shouldStackHorizontally(context) && 
+                ResponsiveHelper.getScreenWidth(context) > 800)
+              _buildDesktopLayout()
+            else
+              _buildMobileLayout(),
+
+            SizedBox(height: ResponsiveHelper.getFormSpacing(context)),
+            _buildSubmitButton(),
+            SizedBox(height: ResponsiveHelper.getFormSpacing(context)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: ResponsiveHelper.adaptiveColumns(
+        context,
+        [
+          _buildImageSection(),
+          _buildDescriptionSection(),
+          _buildPrioritySection(),
+        ],
+        spacing: 32,
+      ),
+    );
+  }
+
+  Widget _buildDesktopLayout() {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Columna izquierda: Imagen y Prioridad
+        Expanded(
+          flex: 1,
+          child: Column(
+            children: [
+              _buildImageSection(),
+              SizedBox(height: ResponsiveHelper.getFormSpacing(context)),
+              _buildPrioritySection(),
+            ],
+          ),
+        ),
+        SizedBox(width: ResponsiveHelper.getFormSpacing(context)),
+        // Columna derecha: Descripción
+        Expanded(
+          flex: 1,
+          child: _buildDescriptionSection(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageSection() {
+    final imageHeight = ResponsiveHelper.responsiveValue(
+      context,
+      mobile: 180.0,
+      smallTablet: 200.0,
+      largeTablet: 220.0,
+      desktop: 250.0,
+      largeDesktop: 280.0,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Evidencia',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getTitleFontSize(context, base: 18),
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF333333),
+          ),
+        ),
+        SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
+        
+        GestureDetector(
+          onTap: _seleccionarImagen,
+          child: AnimatedContainer(
+            duration: ResponsiveHelper.getAnimationDuration(),
+            curve: ResponsiveHelper.getAnimationCurve(),
+            height: imageHeight,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              border: Border.all(
+                color: _imagenSeleccionada != null 
+                    ? const Color(0xFF1976D2).withOpacity(0.3)
+                    : Colors.grey.shade300,
+                width: _imagenSeleccionada != null ? 2.0 : 1.5,
+              ),
+              borderRadius: ResponsiveHelper.getImageBorderRadius(context),
+              boxShadow: _imagenSeleccionada != null
+                  ? [
+                      BoxShadow(
+                        color: const Color(0xFF1976D2).withOpacity(0.1),
+                        blurRadius: ResponsiveHelper.getElevation(context, base: 8),
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: _imagenSeleccionada == null
+                ? _buildImagePlaceholder()
+                : _buildImagePreview(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: EdgeInsets.all(
+            ResponsiveHelper.getSpacing(context, base: 16),
+          ),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1976D2).withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.camera_alt_outlined,
+            size: ResponsiveHelper.getIconSize(context, base: 32),
+            color: const Color(0xFF1976D2),
+          ),
+        ),
+        SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
+        Text(
+          "Tomar fotografía",
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getBodyFontSize(context),
+            color: const Color(0xFF666666),
+            fontWeight: FontWeight.w400,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        if (ResponsiveHelper.isTablet(context) || ResponsiveHelper.isDesktop(context))
+          Padding(
+            padding: EdgeInsets.only(
+              top: ResponsiveHelper.getSpacing(context, base: 8),
+            ),
+            child: Text(
+              "Haz clic para abrir la cámara",
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getBodyFontSize(context, base: 12),
+                color: const Color(0xFF999999),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildImagePreview() {
+    return Stack(
+      children: [
+        ClipRRect(
+          borderRadius: ResponsiveHelper.getImageBorderRadius(context),
+          child: Image.file(
+            _imagenSeleccionada!,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: double.infinity,
+          ),
+        ),
+        Positioned(
+          top: ResponsiveHelper.getSpacing(context, base: 12),
+          right: ResponsiveHelper.getSpacing(context, base: 12),
+          child: Container(
+            padding: EdgeInsets.all(
+              ResponsiveHelper.getSpacing(context, base: 8),
+            ),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: ResponsiveHelper.getElevation(context, base: 4),
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(
+              Icons.edit,
               color: Colors.white,
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 8),
+              size: ResponsiveHelper.getIconSize(context, base: 16),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
-                  // Sección de Imagen
-                  const Text(
-                    'Evidencia',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF333333),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  GestureDetector(
-                    onTap: _seleccionarImagen,
-                    child: Container(
-                      height: 180,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade50,
-                        border: Border.all(
-                          color: Colors.grey.shade300,
-                          width: 1.5,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
+  Widget _buildDescriptionSection() {
+    final textFieldHeight = ResponsiveHelper.responsiveValue(
+      context,
+      mobile: 120.0,
+      smallTablet: 140.0,
+      largeTablet: 160.0,
+      desktop: 180.0,
+      largeDesktop: 200.0,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Descripción',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getTitleFontSize(context, base: 18),
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF333333),
+          ),
+        ),
+        SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
+        
+        Container(
+          height: textFieldHeight,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: ResponsiveHelper.getImageBorderRadius(context),
+            border: Border.all(
+              color: Colors.grey.shade300,
+              width: 1.5,
+            ),
+          ),
+          child: TextField(
+            controller: descripcionController,
+            maxLines: null,
+            expands: true,
+            textAlignVertical: TextAlignVertical.top,
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getBodyFontSize(context),
+              color: const Color(0xFF333333),
+              height: 1.4,
+            ),
+            decoration: InputDecoration(
+              hintText: ResponsiveHelper.responsiveValue(
+                context,
+                mobile: 'Describe la situación...',
+                desktop: 'Describe detalladamente la situación reportada...',
+              ),
+              hintStyle: TextStyle(
+                color: const Color(0xFF999999),
+                fontSize: ResponsiveHelper.getBodyFontSize(context),
+              ),
+              border: InputBorder.none,
+              contentPadding: EdgeInsets.all(
+                ResponsiveHelper.getSpacing(context, base: 16),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPrioritySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Nivel de prioridad',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getTitleFontSize(context, base: 18),
+            fontWeight: FontWeight.w500,
+            color: const Color(0xFF333333),
+          ),
+        ),
+        SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
+        
+        Container(
+          padding: EdgeInsets.symmetric(
+            vertical: ResponsiveHelper.getSpacing(context, base: 20),
+            horizontal: ResponsiveHelper.getSpacing(context, base: 16),
+          ),
+          decoration: BoxDecoration(
+            color: Colors.grey.shade50,
+            borderRadius: ResponsiveHelper.getImageBorderRadius(context),
+            border: Border.all(
+              color: gravedad > 0 
+                  ? const Color(0xFFFFA726).withOpacity(0.3)
+                  : Colors.grey.shade300,
+              width: gravedad > 0 ? 2.0 : 1.5,
+            ),
+          ),
+          child: ResponsiveHelper.shouldStackVertically(context)
+              ? Column(
+                  children: [
+                    Text(
+                      'Seleccionar prioridad:',
+                      style: TextStyle(
+                        fontSize: ResponsiveHelper.getBodyFontSize(context),
+                        color: const Color(0xFF666666),
                       ),
-                      child: _imagenSeleccionada == null
-                          ? Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF1976D2),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.camera_alt_outlined,
-                                    size: 32,
-                                    color: Color(0xFF1976D2),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                const Text(
-                                  "Tomar fotografía",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Color(0xFF666666),
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ],
-                            )
-                          : Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Image.file(
-                                    _imagenSeleccionada!,
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 12,
-                                  right: 12,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: const BoxDecoration(
-                                      color: Colors.black54,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.edit,
-                                      color: Colors.white,
-                                      size: 16,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                    ),
+                    SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
+                    _buildRatingBar(),
+                    if (gravedad > 0) ...[
+                      SizedBox(height: ResponsiveHelper.getSpacing(context, base: 12)),
+                      _buildPriorityLabel(),
+                    ],
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Seleccionar prioridad:',
+                            style: TextStyle(
+                              fontSize: ResponsiveHelper.getBodyFontSize(context),
+                              color: const Color(0xFF666666),
                             ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Sección de Descripción
-                  const Text(
-                    'Descripción',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF333333),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.grey.shade300,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: TextField(
-                      controller: descripcionController,
-                      maxLines: 4,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF333333),
-                      ),
-                      decoration: const InputDecoration(
-                        hintText: 'Describe detalladamente la situación...',
-                        hintStyle: TextStyle(
-                          color: Color(0xFF999999),
-                          fontSize: 16,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: EdgeInsets.all(16),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Sección de Gravedad
-                  const Text(
-                    'Nivel de prioridad',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF333333),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Colors.grey.shade300,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Seleccionar prioridad:',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF666666),
                           ),
-                        ),
-                        RatingBar.builder(
-                          initialRating: gravedad,
-                          minRating: 0,
-                          direction: Axis.horizontal,
-                          allowHalfRating: false,
-                          itemCount: 5,
-                          itemSize: 24,
-                          itemPadding: const EdgeInsets.symmetric(horizontal: 1.0),
-                          itemBuilder: (context, _) => const Icon(
-                            Icons.star_rounded,
-                            color: Color(0xFFFFA726),
-                          ),
-                          onRatingUpdate: (rating) {
-                            setState(() {
-                              gravedad = rating;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Botón Enviar
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: ElevatedButton(
-                      onPressed: _enviarAlerta,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1976D2),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        shadowColor: const Color(0xFF1976D2),
-                      ),
-                      child: const Text(
-                        'Enviar Reporte',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.5,
-                        ),
+                          if (gravedad > 0) ...[
+                            SizedBox(height: ResponsiveHelper.getSpacing(context, base: 4)),
+                            _buildPriorityLabel(),
+                          ],
+                        ],
                       ),
                     ),
-                  ),
+                    SizedBox(width: ResponsiveHelper.getSpacing(context, base: 16)),
+                    _buildRatingBar(),
+                  ],
+                ),
+        ),
+      ],
+    );
+  }
 
-                  const SizedBox(height: 24),
-                ],
+  Widget _buildPriorityLabel() {
+    final labels = ['', 'Muy Baja', 'Baja', 'Media', 'Alta', 'Crítica'];
+    final colors = [
+      Colors.grey,
+      Colors.green,
+      Colors.lightGreen,
+      Colors.orange,
+      Colors.deepOrange,
+      Colors.red,
+    ];
+
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.getSpacing(context, base: 8),
+        vertical: ResponsiveHelper.getSpacing(context, base: 4),
+      ),
+      decoration: BoxDecoration(
+        color: colors[gravedad.toInt()].withOpacity(0.1),
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getBorderRadius(context, base: 12),
+        ),
+        border: Border.all(
+          color: colors[gravedad.toInt()].withOpacity(0.3),
+          width: 1,
+        ),
+      ),
+      child: Text(
+        labels[gravedad.toInt()],
+        style: TextStyle(
+          fontSize: ResponsiveHelper.getBodyFontSize(context, base: 12),
+          color: colors[gravedad.toInt()],
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRatingBar() {
+    return RatingBar.builder(
+      initialRating: gravedad,
+      minRating: 0,
+      direction: Axis.horizontal,
+      allowHalfRating: false,
+      itemCount: 5,
+      itemSize: ResponsiveHelper.getIconSize(context, base: 28),
+      itemPadding: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.getSpacing(context, base: 2),
+      ),
+      itemBuilder: (context, index) => Icon(
+        Icons.star_rounded,
+        color: index < gravedad ? const Color(0xFFFFA726) : Colors.grey.shade300,
+      ),
+      onRatingUpdate: (rating) {
+        setState(() {
+          gravedad = rating;
+        });
+      },
+      glow: false,
+      unratedColor: Colors.grey.shade300,
+    );
+  }
+
+  Widget _buildSubmitButton() {
+    final isFormValid = descripcionController.text.isNotEmpty && gravedad > 0;
+    
+    return AnimatedContainer(
+      duration: ResponsiveHelper.getAnimationDuration(),
+      width: double.infinity,
+      height: ResponsiveHelper.getButtonHeight(context),
+      child: ElevatedButton(
+        onPressed: isFormValid ? _enviarAlerta : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isFormValid 
+              ? const Color(0xFF1976D2) 
+              : Colors.grey.shade400,
+          foregroundColor: Colors.white,
+          elevation: isFormValid 
+              ? ResponsiveHelper.getElevation(context, base: 4) 
+              : 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: ResponsiveHelper.getImageBorderRadius(context),
+          ),
+          shadowColor: const Color(0xFF1976D2),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.send_rounded,
+              size: ResponsiveHelper.getIconSize(context, base: 18),
+            ),
+            SizedBox(width: ResponsiveHelper.getSpacing(context, base: 8)),
+            Text(
+              ResponsiveHelper.responsiveValue(
+                context,
+                mobile: 'Enviar',
+                desktop: 'Enviar Reporte',
+              ),
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getButtonFontSize(context, base: 16),
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.5,
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    descripcionController.dispose();
+    super.dispose();
   }
 }

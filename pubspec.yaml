@@ -24,11 +24,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  fonts:
-      - family: Cookie
-        fonts:
-          - asset: assets/fonts/Cookie-Regular.ttf
-
   assets:
     - assets/imgs/logo.png
     - assets/imgs/background.jpg
@@ -36,4 +31,3 @@ flutter:
     - assets/imgs/muni_logo.png
     - assets/imgs/logo-default.png
     - assets/imgs/logo.png
-    - assets/fonts/Cookie-Regular.ttf
