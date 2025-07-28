@@ -1,10 +1,16 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import '../models/api_response_model.dart';
 import 'api_service.dart';
+import 'package:http/http.dart' as http;
+import 'error_modal_service.dart';
 
 class AlertService {
   static Future<ApiResponse<String>> registerAlert({
+    required BuildContext context,
     required int categoryId,
     required String description,
     required double latitude,
@@ -26,7 +32,7 @@ class AlertService {
         'IN_USUARIO_CREACION': userId,
         'IN_ESTADO_DET': '1',
         'IN_USUARIO_CREACION_DET': userId,
-        'ID_CIUDADANO': citizenId.toString(),
+        'ID_CIUDADANO': citizenId,
         'IN_CORREO': email,
         'IN_CELULAR': phone,
       };
@@ -42,22 +48,48 @@ class AlertService {
         data['IN_IMAGEN_BYTES'] = '';
       }
 
-      final response = await ApiService.postFormData(
-        '/servicio.php?opcion=api/insertAlerta',
+      // Usar la nueva ruta para alertas
+      final streamedResponse = await ApiService.postMultipartFormData(
+        '/api/alertas', // Nueva ruta
         data,
       );
+
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
         if (responseData['RESULTADO'] == 1) {
+          await ErrorModalService.showSuccessModal(
+            context,
+            title: 'Alerta Registrada',
+            message: responseData['MENSAJE'] ??
+                'La alerta se registró correctamente',
+          );
           return ApiResponse.success(responseData['MENSAJE']);
         } else {
+          await ErrorModalService.showErrorModal(
+            context,
+            title: 'Error en el Registro',
+            message: responseData['MENSAJE'] ?? 'Error al registrar alerta',
+          );
           return ApiResponse.error('Error al registrar alerta');
         }
       } else {
+        await ErrorModalService.showErrorModal(
+          context,
+          title: 'Error del Servidor',
+          message:
+              'No se pudo conectar con el servidor. Código: ${response.statusCode}',
+        );
         return ApiResponse.error('Error en el servidor');
       }
     } catch (e) {
+      await ErrorModalService.showErrorModal(
+        context,
+        title: 'Error de Conexión',
+        message:
+            'No se pudo establecer conexión con el servidor. Verifica tu conexión a internet.',
+      );
       return ApiResponse.error('Error de conexión: $e');
     }
   }

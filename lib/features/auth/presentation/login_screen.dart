@@ -1,4 +1,6 @@
-import 'package:boton_panico_app/utils/user_storage_service.dart';
+// ignore_for_file: avoid_print
+
+import 'package:boton_panico_app/service/user_storage_service.dart';
 import 'package:flutter/material.dart';
 import '../../../utils/responsive_helper.dart';
 import '../../../service/auth_service.dart';
@@ -64,7 +66,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final response = await AuthService.loginCitizen(
-        correo: emailController.text.trim(),
+        context: context,
+        usuario: emailController.text.trim(),
         contrasena: passwordController.text,
       );
 
@@ -156,7 +159,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     children: [
                       // Email TextField
-                      Container(
+                      SizedBox(
                         height: ResponsiveHelper.getTextFieldHeight(context),
                         child: TextFormField(
                           controller: emailController,
@@ -202,7 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ResponsiveHelper.getFormFieldSpacing(context)),
 
                       // Password TextField
-                      Container(
+                      SizedBox(
                         height: ResponsiveHelper.getTextFieldHeight(context),
                         child: TextFormField(
                           controller: passwordController,

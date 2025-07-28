@@ -15,7 +15,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _dniController = TextEditingController();
   final _emailController = TextEditingController();
-  final _addressController = TextEditingController();
+  final _addressController = TextEditingController();  
+  final _passwordController = TextEditingController();
+  final _passwordConfirmController = TextEditingController();
 
   bool _acceptedTerms = false;
   bool _isLoading = false;
@@ -27,6 +29,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _dniController.dispose();
     _emailController.dispose();
     _addressController.dispose();
+    _passwordController.dispose();
+    _passwordConfirmController.dispose();
     super.dispose();
   }
 
@@ -49,11 +53,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     try {
       final response = await AuthService.registerCitizen(
+        context: context,
         correo: _emailController.text.trim(),
         telefono: _phoneController.text.trim(),
         nombre: _fullNameController.text.trim(),
         direccion: _addressController.text.trim(),
         numDoc: _dniController.text.trim(),
+        contrasena: _passwordController.text.trim(),
       );
 
       if (mounted) {
@@ -124,19 +130,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // Widget para crear un campo de texto personalizado
   Widget _buildTextField({
-    required TextEditingController controller,
-    required String hintText,
-    TextInputType? keyboardType,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      style: _getTextFieldStyle(),
-      decoration: _getInputDecoration(hintText),
-      validator: validator,
-    );
-  }
+  required TextEditingController controller,
+  required String hintText,
+  TextInputType? keyboardType,
+  String? Function(String?)? validator,
+  bool obscureText = false, 
+}) {
+  return TextFormField(
+    controller: controller,
+    keyboardType: keyboardType,
+    style: _getTextFieldStyle(),
+    decoration: _getInputDecoration(hintText),
+    validator: validator,
+    obscureText: obscureText, 
+  );
+}
 
   // Validadores
   String? _validateFullName(String? value) {
@@ -190,6 +198,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return null;
   }
 
+  String? _validatePassword(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Por favor ingresa tu contraseña';
+    }
+    if (value.trim().length < 6) {
+      return 'Por favor ingresa una contraseña más específica';
+    }
+    return null;
+  }
+
+  String? _validatePasswordConfirm(String? value) {
+  if (value == null || value.trim().isEmpty) {
+    return 'Por favor confirma tu contraseña';
+  }
+  if (value != _passwordController.text.trim()) {
+    return 'Las contraseñas no son iguales';
+  }
+  return null;
+}
+
   List<Widget> _buildFormFields() {
     final spacing = ResponsiveHelper.getFormFieldSpacing(context);
 
@@ -228,6 +256,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
         controller: _addressController,
         hintText: 'Dirección',
         validator: _validateAddress,
+      ),
+
+      SizedBox(height: spacing),
+
+      _buildTextField(
+        controller: _passwordController,
+        hintText: 'Contraseña',
+        validator: _validatePassword,
+        obscureText: true,
+      ),
+
+      SizedBox(height: spacing),
+
+      _buildTextField(
+        controller: _passwordConfirmController,
+        hintText: 'Confirmar Contraseña',
+        validator: _validatePasswordConfirm,
+        obscureText: true,
       ),
     ];
   }

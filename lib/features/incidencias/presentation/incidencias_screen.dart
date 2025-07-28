@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print, use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:geolocator/geolocator.dart';
@@ -5,7 +7,7 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../service/alert_service.dart';
 import '../../../utils/responsive_helper.dart';
-import '../../../utils/user_storage_service.dart';
+import '../../../service/user_storage_service.dart';
 
 class IncidenciaFormScreen extends StatefulWidget {
   final String tipo;
@@ -24,8 +26,6 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
   String? _userId;
   String? _email;
   String? _phone;
-  String? _nombre;
-  String? _direccion;
 
   @override
   void initState() {
@@ -41,8 +41,6 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
           _userId = user.id;
           _email = user.correo;
           _phone = user.telefono;
-          _nombre = user.nombre;
-          _direccion = user.direccion;
         });
         print('Datos de usuario cargados: $_userId, $_email');
       } else {
@@ -159,6 +157,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
 
       // Llamar al servicio
       final response = await AlertService.registerAlert(
+        context: context,
         categoryId: categoryId, // usar el categoryId mapeado, no hardcodeado
         description: descripcionController.text,
         latitude: position.latitude,
@@ -410,7 +409,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
               color: Colors.grey.shade50,
               border: Border.all(
                 color: _imagenSeleccionada != null
-                    ? const Color(0xFF1976D2).withOpacity(0.3)
+                    ? const Color(0xFF1976D2)
                     : Colors.grey.shade300,
                 width: _imagenSeleccionada != null ? 2.0 : 1.5,
               ),
@@ -418,7 +417,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
               boxShadow: _imagenSeleccionada != null
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF1976D2).withOpacity(0.1),
+                        color: const Color(0xFF1976D2),
                         blurRadius:
                             ResponsiveHelper.getElevation(context, base: 8),
                         offset: const Offset(0, 2),
@@ -444,7 +443,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
             ResponsiveHelper.getSpacing(context, base: 16),
           ),
           decoration: BoxDecoration(
-            color: const Color(0xFF1976D2).withOpacity(0.1),
+            color: const Color(0xFF1976D2),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -609,7 +608,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
             borderRadius: ResponsiveHelper.getImageBorderRadius(context),
             border: Border.all(
               color: gravedad > 0
-                  ? const Color(0xFFFFA726).withOpacity(0.3)
+                  ? const Color(0xFFFFA726)
                   : Colors.grey.shade300,
               width: gravedad > 0 ? 2.0 : 1.5,
             ),
@@ -686,12 +685,12 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
         vertical: ResponsiveHelper.getSpacing(context, base: 4),
       ),
       decoration: BoxDecoration(
-        color: colors[gravedad.toInt()].withOpacity(0.1),
+        color: colors[gravedad.toInt()],
         borderRadius: BorderRadius.circular(
           ResponsiveHelper.getBorderRadius(context, base: 12),
         ),
         border: Border.all(
-          color: colors[gravedad.toInt()].withOpacity(0.3),
+          color: colors[gravedad.toInt()],
           width: 1,
         ),
       ),

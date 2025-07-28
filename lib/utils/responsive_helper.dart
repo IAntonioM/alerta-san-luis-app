@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use, curly_braces_in_flow_control_structures, avoid_print
+
 import 'package:flutter/material.dart';
 import 'dart:io';
 

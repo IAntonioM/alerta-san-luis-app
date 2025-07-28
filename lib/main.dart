@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:boton_panico_app/routes/app_routes.dart';
 import 'package:flutter/services.dart';

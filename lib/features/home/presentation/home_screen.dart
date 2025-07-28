@@ -1,6 +1,11 @@
+// ignore_for_file: unrelated_type_equality_checks, curly_braces_in_flow_control_structures
+
 import 'package:flutter/material.dart';
 import '../../../core/widgets/alert_modal.dart';
 import '../../incidencias/presentation/incidencias_screen.dart';
+import '../../../service/auth_service.dart';
+import '../../../service/menu_service.dart';
+import '../../../models/menu_model.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -31,19 +36,8 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _logout(BuildContext context) {
-    // Aquí puedes agregar tu lógica de logout:
-    // - Limpiar tokens de autenticación
-    // - Limpiar datos locales
-    // - Llamar a API de logout
-    
-    // Ejemplo de navegación al login
+    AuthService.logout();
     Navigator.of(context).pushReplacementNamed('/splash');
-    
-    // O si usas Navigator.pushAndRemoveUntil para limpiar todo el stack:
-    // Navigator.of(context).pushAndRemoveUntil(
-    //   MaterialPageRoute(builder: (context) => const LoginScreen()),
-    //   (route) => false,
-    // );
   }
 
   @override
@@ -112,309 +106,195 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
-// El resto del código permanece igual...
-class EmergenciaTab extends StatelessWidget {
+class EmergenciaTab extends StatefulWidget {
   const EmergenciaTab({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final items = [
-      {
-        'icon': Icons.local_fire_department,
-        'text': 'Bomberos',
-        'color': const Color(0xFFE53935)
-      },
-      {
-        'icon': Icons.security,
-        'text': 'Serenazgo',
-        'color': const Color(0xFF1976D2)
-      },
-      {
-        'icon': Icons.local_hospital,
-        'text': 'Ambulancia',
-        'color': const Color(0xFF43A047)
-      },
-    ];
-
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          // Primera fila - 2 cards
-          Row(
-            children: [
-              Expanded(
-                child: _buildCard(
-                  icon: items[0]['icon'] as IconData,
-                  text: items[0]['text'] as String,
-                  color: items[0]['color'] as Color,
-                  onTap: () {
-                    // Acción Bomberos
-                    AlertModal.show(
-                      context: context,
-                      title: 'Bomberos',
-                      onConfirm: () {
-                        // Aquí puedes poner tu lógica de llamada API, etc.
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Alerta enviada a Bomberos')),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildCard(
-                  icon: items[1]['icon'] as IconData,
-                  text: items[1]['text'] as String,
-                  color: items[1]['color'] as Color,
-                  onTap: () {
-                    // Acción Serenazgo
-                    AlertModal.show(
-                      context: context,
-                      title: 'Serenazgo',
-                      onConfirm: () {
-                        // Aquí puedes poner tu lógica de llamada API, etc.
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Alerta enviada a Serenazgo')),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Segunda fila - 1 card en su cuadrícula
-          Row(
-            children: [
-              Expanded(
-                child: _buildCard(
-                  icon: items[2]['icon'] as IconData,
-                  text: items[2]['text'] as String,
-                  color: items[2]['color'] as Color,
-                  onTap: () {
-                    // Acción Ambulancia
-                    AlertModal.show(
-                      context: context,
-                      title: 'Ambulancia',
-                      onConfirm: () {
-                        // Aquí puedes poner tu lógica de llamada API, etc.
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text('Alerta enviada a Ambulancia')),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(child: Container()), // Espacio vacío
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCard({
-    required IconData icon,
-    required String text,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 140,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black,
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 48,
-              color: Colors.white,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  State<EmergenciaTab> createState() => _EmergenciaTabState();
 }
 
-class IncidenciasTab extends StatelessWidget {
-  const IncidenciasTab({super.key});
+class _EmergenciaTabState extends State<EmergenciaTab> {
+  List<MenuCategory> emergenciaMenus = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEmergenciaMenus();
+  }
+
+  Future<void> _loadEmergenciaMenus() async {
+    final response = await MenuService.getMenus(context: context);
+
+    if (response.success && response.data != null) {
+      setState(() {
+        // Filtrar menús de emergencia (grupo 2 según el API)
+        emergenciaMenus =
+            response.data!.where((menu) => menu.grupo == 2).toList();
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final items = [
-      {
-        'icon': Icons.warning,
-        'text': 'Alerta rápida',
-        'color': const Color(0xFFFF9800)
-      },
-      {
-        'icon': Icons.medication,
-        'text': 'Drogas',
-        'color': const Color(0xFF9C27B0)
-      },
-      {
-        'icon': Icons.person_search,
-        'text': 'Sospechosos',
-        'color': const Color(0xFF795548)
-      },
-      {
-        'icon': Icons.car_crash,
-        'text': 'Accidentes de tránsito',
-        'color': const Color(0xFFE53935)
-      },
-      {
-        'icon': Icons.theater_comedy,
-        'text': 'Robo',
-        'color': const Color(0xFF607D8B)
-      },
-    ];
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color.fromARGB(255, 2, 14, 179),
+        ),
+      );
+    }
 
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.all(20),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          // Primera fila
-          Row(
-            children: [
-              Expanded(
-                child: _buildCard(
-                  icon: items[0]['icon'] as IconData,
-                  text: items[0]['text'] as String,
-                  color: items[0]['color'] as Color,
-                  onTap: () {
-                    // Acción Alerta rápida
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildCard(
-                  icon: items[1]['icon'] as IconData,
-                  text: items[1]['text'] as String,
-                  color: items[1]['color'] as Color,
-                  onTap: () {
-                    // Acción Drogas
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const IncidenciaFormScreen(
-                            tipo: 'Drogas'),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Segunda fila
-          Row(
-            children: [
-              Expanded(
-                child: _buildCard(
-                  icon: items[2]['icon'] as IconData,
-                  text: items[2]['text'] as String,
-                  color: items[2]['color'] as Color,
-                  onTap: () {
-                    // Acción Sospechosos
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const IncidenciaFormScreen(
-                            tipo: 'Sospechosos'),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildCard(
-                  icon: items[3]['icon'] as IconData,
-                  text: items[3]['text'] as String,
-                  color: items[3]['color'] as Color,
-                  onTap: () {
-                    // Acción Accidentes
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const IncidenciaFormScreen(
-                            tipo: 'Accidentes'),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Tercera fila - 1 card en su cuadrícula
-          Row(
-            children: [
-              Expanded(
-                child: _buildCard(
-                  icon: items[4]['icon'] as IconData,
-                  text: items[4]['text'] as String,
-                  color: items[4]['color'] as Color,
-                  onTap: () {
-                    // Acción Robo
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const IncidenciaFormScreen(
-                            tipo: 'Robo'),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(child: Container()), // Espacio vacío
-            ],
-          ),
-        ],
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            // Construir filas dinámicamente
+            ..._buildDynamicRows(),
+            // Botón de pánico
+            const SizedBox(height: 20),
+            _buildPanicButton(),
+          ],
+        ),
       ),
     );
   }
 
+  Widget _buildPanicButton() {
+    return GestureDetector(
+      onTap: () {
+        // Acción del botón de pánico (vacía por ahora)
+      },
+      child: Container(
+        width: double.infinity,
+        height: 250,
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFD700), // Color amarillo
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.warning,
+              size: 70,
+              color: Colors.red,
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Botón de pánico',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.red,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildDynamicRows() {
+    List<Widget> rows = [];
+
+    for (int i = 0; i < emergenciaMenus.length; i += 2) {
+      List<Widget> rowChildren = [];
+
+      // Primer elemento de la fila
+      rowChildren.add(
+        Expanded(
+          child: _buildCard(
+            iconUrl: MenuService.getIconUrl(emergenciaMenus[i].iconoCategoria),
+            text: emergenciaMenus[i].nomCategoria,
+            color: _getColorForCategory(emergenciaMenus[i].nomCategoria),
+            onTap: () {
+              AlertModal.show(
+                context: context,
+                title: emergenciaMenus[i].nomCategoria,
+                onConfirm: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                          'Alerta enviada a ${emergenciaMenus[i].nomCategoria}'),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      );
+
+      rowChildren.add(const SizedBox(width: 16));
+
+      // Segundo elemento de la fila (si existe)
+      if (i + 1 < emergenciaMenus.length) {
+        rowChildren.add(
+          Expanded(
+            child: _buildCard(
+              iconUrl:
+                  MenuService.getIconUrl(emergenciaMenus[i + 1].iconoCategoria),
+              text: emergenciaMenus[i + 1].nomCategoria,
+              color: _getColorForCategory(emergenciaMenus[i + 1].nomCategoria),
+              onTap: () {
+                AlertModal.show(
+                  context: context,
+                  title: emergenciaMenus[i + 1].nomCategoria,
+                  onConfirm: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            'Alerta enviada a ${emergenciaMenus[i + 1].nomCategoria}'),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        );
+      } else {
+        // Espacio vacío si no hay segundo elemento
+        rowChildren.add(Expanded(child: Container()));
+      }
+
+      rows.add(Row(children: rowChildren));
+
+      // Agregar espaciado entre filas (excepto después de la última)
+      if (i + 2 < emergenciaMenus.length) {
+        rows.add(const SizedBox(height: 16));
+      }
+    }
+
+    return rows;
+  }
+
+  Color _getColorForCategory(String categoryName) {
+    final name = categoryName.toLowerCase();
+    if (name.contains('bomberos')) return const Color(0xFFC22725);
+    if (name.contains('serenazgo')) return const Color(0xFF0C9BD7);
+    if (name.contains('ambulancia')) return const Color(0xFF76A054);
+    return const Color(0xFF757575); // Color por defecto
+  }
+
   Widget _buildCard({
-    required IconData icon,
+    required String iconUrl,
     required String text,
     required Color color,
     required VoidCallback onTap,
@@ -437,24 +317,247 @@ class IncidenciasTab extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 48,
-              color: Colors.white,
-            ),
-            const SizedBox(height: 12),
-            Text(
-              text,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
+            // Imagen desde URL
+            Image.network(
+              iconUrl,
+              height: 140,
+              width: 140,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                // Fallback a icono por defecto si la imagen no carga
+                return Icon(
+                  _getDefaultIcon(),
+                  size: 70,
+                  color: Colors.white,
+                );
+              },
             ),
           ],
         ),
       ),
     );
+  }
+
+  IconData _getDefaultIcon() {
+    return Icons.emergency;
+  }
+}
+
+class IncidenciasTab extends StatefulWidget {
+  const IncidenciasTab({super.key});
+
+  @override
+  State<IncidenciasTab> createState() => _IncidenciasTabState();
+}
+
+class _IncidenciasTabState extends State<IncidenciasTab> {
+  List<MenuCategory> incidenciaMenus = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadIncidenciaMenus();
+  }
+
+  Future<void> _loadIncidenciaMenus() async {
+    final response = await MenuService.getMenus(context: context);
+
+    if (response.success && response.data != null) {
+      setState(() {
+        // Filtrar menús de incidencias (grupo 1 según el API)
+        incidenciaMenus =
+            response.data!.where((menu) => menu.grupo == 1).toList();
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color.fromARGB(255, 2, 14, 179),
+        ),
+      );
+    }
+
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.all(20),
+      child: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            // Construir filas dinámicamente
+            ..._buildDynamicRows(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildDynamicRows() {
+    List<Widget> rows = [];
+
+    for (int i = 0; i < incidenciaMenus.length; i += 2) {
+      List<Widget> rowChildren = [];
+
+      // Primer elemento de la fila
+      rowChildren.add(
+        Expanded(
+          child: _buildCard(
+            iconUrl: MenuService.getIconUrl(incidenciaMenus[i].iconoCategoria),
+            text: incidenciaMenus[i].nomCategoria,
+            color: _getColorForCategory(incidenciaMenus[i].nomCategoria),
+            onTap: () {
+              if (incidenciaMenus[i]
+                  .nomCategoria
+                  .toLowerCase()
+                  .contains('alerta')) {
+                // Acción para alerta rápida
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content:
+                          Text('${incidenciaMenus[i].nomCategoria} activada')),
+                );
+              } else {
+                // Navegar al formulario
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => IncidenciaFormScreen(
+                      tipo: incidenciaMenus[i].nomCategoria,
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        ),
+      );
+
+      rowChildren.add(const SizedBox(width: 16));
+
+      // Segundo elemento de la fila (si existe)
+      if (i + 1 < incidenciaMenus.length) {
+        rowChildren.add(
+          Expanded(
+            child: _buildCard(
+              iconUrl:
+                  MenuService.getIconUrl(incidenciaMenus[i + 1].iconoCategoria),
+              text: incidenciaMenus[i + 1].nomCategoria,
+              color: _getColorForCategory(incidenciaMenus[i + 1].nomCategoria),
+              onTap: () {
+                if (incidenciaMenus[i + 1]
+                    .nomCategoria
+                    .toLowerCase()
+                    .contains('alerta')) {
+                  // Acción para alerta rápida
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text(
+                            '${incidenciaMenus[i + 1].nomCategoria} activada')),
+                  );
+                } else {
+                  // Navegar al formulario
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => IncidenciaFormScreen(
+                        tipo: incidenciaMenus[i + 1].nomCategoria,
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
+        );
+      } else {
+        // Espacio vacío si no hay segundo elemento
+        rowChildren.add(Expanded(child: Container()));
+      }
+
+      rows.add(Row(children: rowChildren));
+
+      // Agregar espaciado entre filas (excepto después de la última)
+      if (i + 2 < incidenciaMenus.length) {
+        rows.add(const SizedBox(height: 16));
+      }
+    }
+
+    return rows;
+  }
+
+  Color _getColorForCategory(String categoryName) {
+    final name = categoryName.toLowerCase();
+    if (name.contains('alerta rapida')) return const Color(0xFFC22725);
+    if (name.contains('drogas')) return const Color(0xFF17DC09);
+    if (name.contains('robo')) return const Color(0xFF051A51);
+    if (name.contains('sospechosos')) return const Color(0xFF494544);
+    if (name.contains('accidente de transito')) return const Color(0xFFAF9570);
+    if (name.contains('alteración al orden público'))
+      return const Color(0xFF0C9BD7);
+    if (name.contains('violencia familiar')) return const Color(0xFF49738B);
+    if (name.contains('ruidos molestos')) return const Color(0xFF494544);
+    if (name.contains('parques y jardines')) return const Color(0xFF76A054);
+    if (name.contains('limpieza pública')) return const Color(0xFF76A054);
+    if (name.contains('otros')) return const Color(0xFF051A51);
+    return const Color(0xFF757575); // Color por defecto
+  }
+
+  Widget _buildCard({
+    required String iconUrl,
+    required String text,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 140,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black,
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Imagen desde URL
+            Image.network(
+              iconUrl,
+              height: 140,
+              width: 140,
+              fit: BoxFit.contain,
+              errorBuilder: (context, error, stackTrace) {
+                // Fallback a icono por defecto si la imagen no carga
+                return Icon(
+                  _getDefaultIcon(),
+                  size: 70,
+                  color: Colors.white,
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  IconData _getDefaultIcon() {
+    return Icons.warning;
   }
 }

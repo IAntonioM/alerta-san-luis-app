@@ -1,10 +1,10 @@
 class MenuCategory {
-  final String idCategoria;
+  final int idCategoria;
   final String iconoCategoria;
   final String nomCategoria;
-  final String grupo;
+  final int grupo;
   final String fechaRegistro;
-  final String flag;
+  final int flag;
 
   MenuCategory({
     required this.idCategoria,

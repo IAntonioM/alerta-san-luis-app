@@ -138,7 +138,7 @@ class _SplashScreenState extends State<SplashScreen>
                           vertical: ResponsiveHelper.getSpacing(context, base: 16),
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.blue.withOpacity(0.1),
+                          color: Colors.blue,
                           borderRadius: BorderRadius.circular(
                             ResponsiveHelper.getBorderRadius(context, base: 12),
                           ),

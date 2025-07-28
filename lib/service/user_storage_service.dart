@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/ciudadano_model.dart';
@@ -5,6 +7,7 @@ import '../models/ciudadano_model.dart';
 class UserStorageService {
   static const String _userKey = 'current_user';
   static const String _isLoggedInKey = 'is_logged_in';
+  static const String _tokenKey = 'auth_token'; // Nuevo para manejar tokens
 
   // Guardar datos del usuario después del login
   static Future<void> saveUser(Citizen user) async {
@@ -27,6 +30,28 @@ class UserStorageService {
       print('Usuario guardado exitosamente');
     } catch (e) {
       print('Error al guardar usuario: $e');
+    }
+  }
+
+  // Nuevo método para guardar token de autenticación
+  static Future<void> saveToken(String token) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_tokenKey, token);
+      print('Token guardado exitosamente');
+    } catch (e) {
+      print('Error al guardar token: $e');
+    }
+  }
+
+  // Nuevo método para obtener token
+  static Future<String?> getToken() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_tokenKey);
+    } catch (e) {
+      print('Error al obtener token: $e');
+      return null;
     }
   }
 
@@ -87,6 +112,7 @@ class UserStorageService {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_userKey);
+      await prefs.remove(_tokenKey); // También limpiar token
       await prefs.setBool(_isLoggedInKey, false);
       print('Datos de usuario eliminados');
     } catch (e) {
