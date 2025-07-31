@@ -124,8 +124,8 @@ class CalificacionWidget extends StatelessWidget {
       child: Text(
         labels[gravedad.toInt()],
         style: TextStyle(
-          fontSize: ResponsiveHelper.getBodyFontSize(context, base: 12),
-          color: colors[gravedad.toInt()],
+          fontSize: ResponsiveHelper.getBodyFontSize(context, base: 18),
+          color: Colors.white,
           fontWeight: FontWeight.w500,
         ),
       ),

@@ -6,6 +6,7 @@ import 'package:boton_panico_app/service/boton_de_panico_service.dart';
 import 'package:boton_panico_app/service/error_modal_service.dart';
 import 'package:boton_panico_app/service/socket_service.dart';
 import 'package:boton_panico_app/service/user_storage_service.dart';
+import 'package:boton_panico_app/utils/responsive_helper.dart';
 import 'package:flutter/material.dart';
 import '../../incidencias/presentation/incidencias_screen.dart';
 import '../../../service/auth_service.dart';
@@ -61,13 +62,13 @@ class HomeScreen extends StatelessWidget {
               // Logo de la municipalidad
               Image.asset(
                 'assets/imgs/muni_logo.png',
-                height: 60,
+                height: ResponsiveHelper.getIconSize(context, base: 50),
                 fit: BoxFit.contain,
               ),
               // Logo de la app
               Image.asset(
                 'assets/imgs/logo.png',
-                height: 50,
+                height: ResponsiveHelper.getIconSize(context, base: 80),
                 fit: BoxFit.contain,
               ),
             ],

@@ -9,7 +9,7 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> 
+class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -75,44 +75,47 @@ class _SplashScreenState extends State<SplashScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // Icono principal con tamaño responsivo
-                    Icon(
-                      Icons.shield,
-                      size: ResponsiveHelper.getIconSize(context, base: 100),
-                      color: Colors.blue,
+                    Image.asset(
+                      "assets/imgs/logo.png",
+                      width: ResponsiveHelper.getIconSize(context, base: 500),
+                      height: ResponsiveHelper.getIconSize(context, base: 200),
                     ),
-                    
+
                     // Espaciado responsivo
                     SizedBox(
                       height: ResponsiveHelper.getSpacing(context, base: 20),
                     ),
-                    
+
                     // Texto principal con tamaño responsivo
                     Text(
                       "Cargando...",
                       style: TextStyle(
-                        fontSize: ResponsiveHelper.getTitleFontSize(context, base: 20),
+                        fontSize: ResponsiveHelper.getTitleFontSize(context,
+                            base: 20),
                         fontWeight: FontWeight.w500,
                         color: Colors.grey[700],
                       ),
                     ),
-                    
+
                     // Espaciado adicional
                     SizedBox(
                       height: ResponsiveHelper.getSpacing(context, base: 32),
                     ),
-                    
+
                     // Indicador de progreso con tamaño responsivo
                     SizedBox(
                       width: ResponsiveHelper.getResponsiveWidth(context, 40),
                       height: ResponsiveHelper.getResponsiveHeight(context, 40),
                       child: CircularProgressIndicator(
-                        strokeWidth: ResponsiveHelper.isMobile(context) ? 3.0 : 4.0,
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+                        strokeWidth:
+                            ResponsiveHelper.isMobile(context) ? 3.0 : 4.0,
+                        valueColor:
+                            const AlwaysStoppedAnimation<Color>(Colors.blue),
                       ),
                     ),
-                    
+
                     // Texto adicional para dispositivos más grandes
-                    if (ResponsiveHelper.isTablet(context) || 
+                    if (ResponsiveHelper.isTablet(context) ||
                         ResponsiveHelper.isDesktop(context)) ...[
                       SizedBox(
                         height: ResponsiveHelper.getSpacing(context, base: 24),
@@ -120,13 +123,14 @@ class _SplashScreenState extends State<SplashScreen>
                       Text(
                         "Inicializando aplicación...",
                         style: TextStyle(
-                          fontSize: ResponsiveHelper.getBodyFontSize(context, base: 14),
+                          fontSize: ResponsiveHelper.getBodyFontSize(context,
+                              base: 14),
                           color: Colors.grey[600],
                           fontWeight: FontWeight.w300,
                         ),
                       ),
                     ],
-                    
+
                     // Logo o información adicional para pantallas grandes
                     if (ResponsiveHelper.isDesktop(context)) ...[
                       SizedBox(
@@ -134,8 +138,10 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                       Container(
                         padding: EdgeInsets.symmetric(
-                          horizontal: ResponsiveHelper.getHorizontalPadding(context),
-                          vertical: ResponsiveHelper.getSpacing(context, base: 16),
+                          horizontal:
+                              ResponsiveHelper.getHorizontalPadding(context),
+                          vertical:
+                              ResponsiveHelper.getSpacing(context, base: 16),
                         ),
                         decoration: BoxDecoration(
                           color: Colors.blue,
@@ -146,7 +152,8 @@ class _SplashScreenState extends State<SplashScreen>
                         child: Text(
                           "Versión 1.0.0",
                           style: TextStyle(
-                            fontSize: ResponsiveHelper.getBodyFontSize(context, base: 12),
+                            fontSize: ResponsiveHelper.getBodyFontSize(context,
+                                base: 12),
                             color: Colors.blue[800],
                             fontWeight: FontWeight.w400,
                           ),

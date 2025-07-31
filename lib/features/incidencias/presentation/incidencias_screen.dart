@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'dart:io';
+import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import '../../../service/alert_service.dart';
 import '../../../utils/responsive_helper.dart';
@@ -126,6 +127,36 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
     return 'alerta_${widget.tipo}_$timestamp.jpg';
   }
 
+  String? _getAudioFileName() {
+    if (_audioPath == null) return null;
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    return 'audio_${widget.tipo}_$timestamp.mp3';
+  }
+
+  // Función para convertir audio a base64 y crear un File temporal
+  Future<File?> _createAudioFileForUpload() async {
+    if (_audioPath == null) return null;
+    
+    try {
+      final audioFile = File(_audioPath!);
+      final audioBytes = await audioFile.readAsBytes();
+      final audioBase64 = base64Encode(audioBytes);
+      
+      // Crear un archivo temporal con el contenido base64
+      final tempDir = Directory.systemTemp;
+      final tempFile = File('${tempDir.path}/temp_audio_${DateTime.now().millisecondsSinceEpoch}.mp3');
+      
+      // Escribir los bytes originales del audio al archivo temporal
+      await tempFile.writeAsBytes(audioBytes);
+      
+      print('Audio convertido para envío - Tamaño: ${audioBase64.length} bytes');
+      return tempFile;
+    } catch (e) {
+      print('Error al procesar audio: $e');
+      return null;
+    }
+  }
+
   Future<void> _enviarAlerta() async {
     if (_isLoading) return;
 
@@ -151,7 +182,24 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
       // Mapear el tipo de incidencia a categoryId
       final categoryId = widget.idCategoria;
 
-      // Llamar al servicio (aquí necesitarías modificar AlertService para incluir audio)
+      File? fileToSend;
+      String? fileName;
+
+      // Si es categoría 8 (audio), preparar el archivo de audio
+      if (widget.idCategoria == '8') {
+        fileToSend = await _createAudioFileForUpload();
+        fileName = _getAudioFileName();
+        
+        if (fileToSend == null) {
+          throw Exception('Error al procesar el archivo de audio');
+        }
+      } else {
+        // Para otras categorías, usar la imagen
+        fileToSend = _imagenSeleccionada;
+        fileName = _getImageFileName();
+      }
+
+      // Llamar al servicio usando los mismos parámetros imageFile y fileName
       final response = await AlertService.registerAlert(
         context: context,
         categoryId: categoryId,
@@ -162,9 +210,8 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
         citizenId: _userId!,
         email: _email!,
         phone: _phone!,
-        imageFile: _imagenSeleccionada,
-        fileName: _getImageFileName(),
-        // audioPath: _audioPath, // Agregar parámetro de audio si es necesario
+        imageFile: fileToSend, // Aquí se envía imagen o audio según la categoría
+        fileName: fileName,    // Nombre del archivo (imagen o audio)
       );
 
       print(response);
@@ -209,7 +256,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
         ResponsiveHelper.getSliverAppBarHeight(context),
       ),
       child: AppBar(
-        backgroundColor: const Color(0xFF1976D2),
+        backgroundColor: const Color.fromARGB(255, 2, 14, 179),
         elevation: ResponsiveHelper.getElevation(context, base: 0),
         leading: IconButton(
           icon: Icon(
@@ -234,7 +281,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
                 ),
                 Image.asset(
                   'assets/imgs/logo.png',
-                  height: ResponsiveHelper.getIconSize(context, base: 40),
+                  height: ResponsiveHelper.getIconSize(context, base: 80),
                 ),
               ],
             ),
@@ -258,7 +305,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF1976D2),
+      color: const Color.fromARGB(255, 2, 14, 179),
       child: Column(
         children: [
           SizedBox(height: ResponsiveHelper.getSpacing(context, base: 20)),
@@ -361,8 +408,18 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
   }
 
   Widget _buildSubmitButton() {
-    final isFormValid =
-        descripcionController.text.isNotEmpty && gravedad > 0 && !_isLoading;
+    // Validación del formulario actualizada para considerar audio en categoría 8
+    bool hasMediaFile = false;
+    if (widget.idCategoria == '8') {
+      hasMediaFile = _audioPath != null && _audioPath!.isNotEmpty;
+    } else {
+      hasMediaFile = _imagenSeleccionada != null;
+    }
+
+    final isFormValid = descripcionController.text.isNotEmpty && 
+                       gravedad > 0 && 
+                       hasMediaFile && 
+                       !_isLoading;
 
     return AnimatedContainer(
       duration: ResponsiveHelper.getAnimationDuration(),

@@ -40,7 +40,8 @@ class MenuService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        final menus = data.map((json) => MenuCategory.fromJson(json)).toList();
+        final filteredData = data.where((json) => json['id_categoria'] != 22).toList();
+        final menus = filteredData.map((json) => MenuCategory.fromJson(json)).toList();
 
         // Guardar en cache
         _cachedMenus = menus;

@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart'; // Importar permission_handler
 import '../../../../utils/responsive_helper.dart';
 
 enum AudioState { idle, recording, paused, recorded, playing }
@@ -63,11 +63,24 @@ class _AudioWidgetState extends State<AudioWidget>
   }
 
   Future<void> _initializeAudio() async {
-    _recorder = FlutterSoundRecorder();
-    _player = FlutterSoundPlayer();
-    
-    await _recorder!.openRecorder();
-    await _player!.openPlayer();
+    try {
+      _recorder = FlutterSoundRecorder();
+      _player = FlutterSoundPlayer();
+      
+      // Verificar permisos antes de abrir el recorder
+      final hasPermissions = await _requestPermissions();
+      if (!hasPermissions) {
+        debugPrint('No se pudieron obtener permisos, inicialización parcial');
+        await _player!.openPlayer(); // Solo abrir el player
+        return;
+      }
+      
+      await _recorder!.openRecorder();
+      await _player!.openPlayer();
+      debugPrint('Audio inicializado correctamente');
+    } catch (e) {
+      debugPrint('Error inicializando audio: $e');
+    }
   }
 
   @override
@@ -81,28 +94,103 @@ class _AudioWidgetState extends State<AudioWidget>
     super.dispose();
   }
 
-  Future<bool> _checkPermissions() async {
-    final microphoneStatus = await Permission.microphone.request();
-    final storageStatus = await Permission.storage.request();
-    
-    return microphoneStatus.isGranted && 
-           (storageStatus.isGranted || storageStatus.isPermanentlyDenied); // En Android 13+ storage no es necesario
-  }
-
   Future<String> _getAudioPath() async {
     final directory = await getApplicationDocumentsDirectory();
     final fileName = 'audio_${DateTime.now().millisecondsSinceEpoch}.aac';
     return '${directory.path}/$fileName';
   }
 
-  Future<void> _startRecording() async {
-    if (!await _checkPermissions()) {
-      _showPermissionDialog();
-      return;
-    }
-
+  // Función para verificar y solicitar permisos
+  Future<bool> _requestPermissions() async {
     try {
+      // Verificar permisos actuales
+      PermissionStatus microphoneStatus = await Permission.microphone.status;
+      
+      debugPrint('Estado actual del micrófono: $microphoneStatus');
+      
+      // Si ya está concedido, retornar true
+      if (microphoneStatus.isGranted) {
+        debugPrint('Permisos ya concedidos');
+        return true;
+      }
+      
+      // Si está denegado permanentemente, mostrar diálogo
+      if (microphoneStatus.isPermanentlyDenied) {
+        debugPrint('Permisos denegados permanentemente');
+        _showPermissionDeniedDialog();
+        return false;
+      }
+      
+      // Solicitar permisos si no están concedidos
+      if (microphoneStatus.isDenied || microphoneStatus.isRestricted) {
+        debugPrint('Solicitando permisos de micrófono...');
+        microphoneStatus = await Permission.microphone.request();
+        debugPrint('Resultado de solicitud: $microphoneStatus');
+      }
+
+      // Verificar resultado final
+      if (microphoneStatus.isGranted) {
+        debugPrint('Permisos concedidos exitosamente');
+        return true;
+      } else if (microphoneStatus.isPermanentlyDenied) {
+        debugPrint('Permisos denegados permanentemente después de solicitar');
+        _showPermissionDeniedDialog();
+        return false;
+      } else {
+        debugPrint('Permisos denegados: $microphoneStatus');
+        _showErrorDialog('Se requieren permisos de micrófono para grabar audio. Estado: $microphoneStatus');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Error solicitando permisos: $e');
+      _showErrorDialog('Error al solicitar permisos: $e');
+      return false;
+    }
+  }
+
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permisos requeridos'),
+        content: const Text(
+          'Esta aplicación necesita acceso al micrófono para grabar audio. '
+          'Por favor, habilita los permisos en la configuración de la aplicación.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings(); // Abre la configuración de la app
+            },
+            child: const Text('Configuración'),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Future<void> _startRecording() async {
+    try {
+      // Verificar si el recorder está inicializado
+      if (_recorder == null) {
+        _showErrorDialog('El grabador no está inicializado');
+        return;
+      }
+
+      // Verificar y solicitar permisos
+      final hasPermissions = await _requestPermissions();
+      if (!hasPermissions) {
+        return;
+      }
+
       final audioPath = await _getAudioPath();
+      debugPrint('Iniciando grabación en: $audioPath');
       
       await _recorder!.startRecorder(
         toFile: audioPath,
@@ -127,9 +215,14 @@ class _AudioWidgetState extends State<AudioWidget>
         }
       });
 
+      debugPrint('Grabación iniciada exitosamente');
+
     } catch (e) {
       debugPrint('Error al iniciar grabación: $e');
-      _showErrorDialog('Error al iniciar la grabación');
+      setState(() {
+        _audioState = AudioState.idle;
+      });
+      _showErrorDialog('Error al iniciar la grabación:\n${e.toString()}');
     }
   }
 
@@ -280,30 +373,7 @@ class _AudioWidgetState extends State<AudioWidget>
     
     widget.onAudioRecorded(null);
   }
-
-  void _showPermissionDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Permisos requeridos'),
-        content: const Text('Esta aplicación necesita acceso al micrófono para grabar audio.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              openAppSettings();
-            },
-            child: const Text('Configuración'),
-          ),
-        ],
-      ),
-    );
-  }
-
+  
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
