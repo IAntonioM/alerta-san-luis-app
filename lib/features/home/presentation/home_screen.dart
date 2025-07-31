@@ -1,14 +1,18 @@
 // ignore_for_file: unrelated_type_equality_checks, curly_braces_in_flow_control_structures, use_build_context_synchronously
 
+import 'dart:async';
+
 import 'package:boton_panico_app/service/boton_de_panico_service.dart';
+import 'package:boton_panico_app/service/error_modal_service.dart';
 import 'package:boton_panico_app/service/socket_service.dart';
 import 'package:boton_panico_app/service/user_storage_service.dart';
 import 'package:flutter/material.dart';
-import '../../../core/widgets/alert_modal.dart';
 import '../../incidencias/presentation/incidencias_screen.dart';
 import '../../../service/auth_service.dart';
 import '../../../service/menu_service.dart';
 import '../../../models/menu_model.dart';
+import 'package:geolocator/geolocator.dart';
+import '../../../service/alert_service.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -39,8 +43,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _logout(BuildContext context) {
-    AuthService.logout();
-    Navigator.of(context).pushReplacementNamed('/splash');
+    AuthService.logout(context);
   }
 
   @override
@@ -119,6 +122,8 @@ class EmergenciaTab extends StatefulWidget {
 class _EmergenciaTabState extends State<EmergenciaTab> {
   List<MenuCategory> emergenciaMenus = [];
   bool isLoading = true;
+  Timer? _countdownTimer;
+  int _remainingSeconds = 20;
 
   @override
   void initState() {
@@ -169,6 +174,140 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
         ),
       ),
     );
+  }
+
+  Future<void> _handleEmergencyAlert(MenuCategory menu) async {
+    // Mostrar confirmación
+    final shouldSend = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('⚠️ ${menu.nomCategoria}'),
+        content: Text(
+            '¿Confirmas que necesitas ${menu.nomCategoria.toLowerCase()}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('ENVIAR ALERTA',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSend == true) {
+      _sendEmergencyAlert(menu);
+    }
+  }
+
+  Future<void> _sendEmergencyAlert(MenuCategory menu) async {
+    // Mostrar loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      // Obtener datos del usuario
+      final user = await UserStorageService.getUser();
+      if (user == null) {
+        throw Exception('Datos de usuario no disponibles');
+      }
+
+      // Obtener ubicación
+      final position = await _getCurrentLocation();
+      if (position == null) {
+        throw Exception('No se pudo obtener la ubicación');
+      }
+
+      // Enviar alerta usando el mismo servicio
+      final response = await AlertService.registerAlert(
+        context: context,
+        categoryId: menu.idCategoria.toString(),
+        description: 'Alerta de emergencia: ${menu.nomCategoria}',
+        latitude: position.latitude,
+        longitude: position.longitude,
+        userId: user.id,
+        citizenId: user.id,
+        email: user.correo,
+        phone: user.telefono,
+        imageFile: null,
+        fileName: null,
+      );
+
+      Navigator.pop(context); // Cerrar loading
+
+      if (response.success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content:
+                Text('Alerta de ${menu.nomCategoria} enviada exitosamente'),
+            backgroundColor: const Color(0xFF4CAF50),
+          ),
+        );
+      } else {
+        throw Exception(response.error);
+      }
+    } catch (e) {
+      Navigator.pop(context); // Cerrar loading
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<Position?> _getCurrentLocation() async {
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Por favor, habilita el servicio de ubicación'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+        return null;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Permisos de ubicación denegados')),
+          );
+          return null;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Permisos de ubicación denegados permanentemente'),
+            duration: Duration(seconds: 4),
+          ),
+        );
+        return null;
+      }
+
+      return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 10),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error obteniendo ubicación: ${e.toString()}')),
+      );
+      return null;
+    }
   }
 
   Widget _buildPanicButton() {
@@ -267,31 +406,50 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
   }
 
   void _showWaitingDialog() {
+    _remainingSeconds = 20; // Reiniciar contador
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('⏳ Esperando respuesta'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            const Text(
-                'Estamos a la espera de una respuesta del personal de seguridad.'),
-            const SizedBox(height: 8),
-            Text('Tiempo restante: 20 segundos',
-                style: TextStyle(fontWeight: FontWeight.bold)),
-          ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('⏳ Esperando respuesta'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              const Text(
+                  'Estamos a la espera de una respuesta del personal de seguridad.'),
+              const SizedBox(height: 8),
+              Text('Tiempo restante: $_remainingSeconds segundos',
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
         ),
       ),
     );
 
-    // Timer de 20 segundos
-    Future.delayed(const Duration(seconds: 20), () {
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-        _showTimeoutAlert();
+    // Iniciar timer
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingSeconds > 0) {
+        setState(() {
+          _remainingSeconds--;
+        });
+      } else {
+        timer.cancel();
+        if (Navigator.canPop(context)) {
+          try {
+            Navigator.pop(context);
+            _showTimeoutAlert();
+          } catch (e) {
+            ErrorModalService.showErrorModal(
+              context,
+              title: 'Error de Conexión',
+              message: 'Error cerrando diálogo: $e.',
+            );
+          }
+        }
       }
     });
   }
@@ -299,21 +457,35 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
   void _connectSocket() async {
     final userId = await UserStorageService.getUserId();
     if (userId != null) {
-      SocketService.connect(userId);
+      SocketService.connect(userId.toString()); // Asegurar que sea string
+
+      // Esperar un poco para que se establezca la conexión
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      // Testear conexión (opcional, para debug)
+      SocketService.testConnection();
 
       SocketService.onAlertaAceptada((data) {
-        if (data['id'] == userId) {
-          Navigator.pop(context); // Cerrar diálogo
+        _countdownTimer?.cancel();
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context); // Cerrar diálogo de espera
           _showSuccessAlert();
         }
       });
 
       SocketService.onAlertaNoRespondida((data) {
-        if (data['id'] == userId) {
-          Navigator.pop(context); // Cerrar diálogo
+        _countdownTimer?.cancel();
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context); // Cerrar diálogo de espera
           _showNoResponseAlert();
         }
       });
+    } else {
+      await ErrorModalService.showErrorModal(
+        context,
+        title: 'Error',
+        message: '❌ No se pudo obtener el ID del usuario.',
+      );
     }
   }
 
@@ -380,18 +552,7 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
             text: emergenciaMenus[i].nomCategoria,
             color: _getColorForCategory(emergenciaMenus[i].nomCategoria),
             onTap: () {
-              AlertModal.show(
-                context: context,
-                title: emergenciaMenus[i].nomCategoria,
-                onConfirm: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          'Alerta enviada a ${emergenciaMenus[i].nomCategoria}'),
-                    ),
-                  );
-                },
-              );
+              _handleEmergencyAlert(emergenciaMenus[i]);
             },
           ),
         ),
@@ -408,20 +569,7 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
                   MenuService.getIconUrl(emergenciaMenus[i + 1].iconoCategoria),
               text: emergenciaMenus[i + 1].nomCategoria,
               color: _getColorForCategory(emergenciaMenus[i + 1].nomCategoria),
-              onTap: () {
-                AlertModal.show(
-                  context: context,
-                  title: emergenciaMenus[i + 1].nomCategoria,
-                  onConfirm: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                            'Alerta enviada a ${emergenciaMenus[i + 1].nomCategoria}'),
-                      ),
-                    );
-                  },
-                );
-              },
+              onTap: () => _handleEmergencyAlert(emergenciaMenus[i + 1]),
             ),
           ),
         );
@@ -496,6 +644,7 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
 
   @override
   void dispose() {
+    _countdownTimer?.cancel();
     SocketService.disconnect();
     super.dispose();
   }
@@ -634,13 +783,12 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
                     MaterialPageRoute(
                       builder: (_) => IncidenciaFormScreen(
                         tipo: incidenciaMenus[i + 1].nomCategoria,
-                        idCategoria: incidenciaMenus[i+1].idCategoria.toString(),
+                        idCategoria:
+                            incidenciaMenus[i + 1].idCategoria.toString(),
                       ),
                     ),
                   );
                 }
-                print("id categoria:");
-                print(incidenciaMenus[i + 1].idCategoria.toString());
               },
             ),
           ),

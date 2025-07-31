@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'dart:io';
+import 'package:boton_panico_app/service/auth_service.dart';
 import 'package:flutter/material.dart';
 import '../models/api_response_model.dart';
 import 'api_service.dart';
@@ -80,7 +81,8 @@ class AlertService {
           title: 'Error del Servidor',
           message:
               'No se pudo conectar con el servidor. Código: ${response.statusCode} - Mensaje: ${response.body}',
-        );
+        );        
+        await AuthService.logout(context);
         return ApiResponse.error('Error en el servidor');
       }
     } catch (e) {
@@ -89,7 +91,8 @@ class AlertService {
         title: 'Error de Conexión',
         message:
             'No se pudo establecer conexión con el servidor. Verifica tu conexión a internet.',
-      );
+      );      
+      await AuthService.logout(context);
       return ApiResponse.error('Error de conexión: $e');
     }
   }

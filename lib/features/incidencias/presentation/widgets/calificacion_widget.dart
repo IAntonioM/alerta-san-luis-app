@@ -112,7 +112,7 @@ class CalificacionWidget extends StatelessWidget {
         vertical: ResponsiveHelper.getSpacing(context, base: 4),
       ),
       decoration: BoxDecoration(
-        color: colors[gravedad.toInt()].withOpacity(0.1),
+        color: colors[gravedad.toInt()],
         borderRadius: BorderRadius.circular(
           ResponsiveHelper.getBorderRadius(context, base: 12),
         ),

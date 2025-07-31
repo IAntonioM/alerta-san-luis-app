@@ -69,7 +69,7 @@ class _CamaraWidgetState extends State<CamaraWidget> {
               boxShadow: widget.imagenSeleccionada != null
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF1976D2).withOpacity(0.3),
+                        color: const Color(0xFF1976D2),
                         blurRadius:
                             ResponsiveHelper.getElevation(context, base: 8),
                         offset: const Offset(0, 2),
@@ -95,7 +95,7 @@ class _CamaraWidgetState extends State<CamaraWidget> {
             ResponsiveHelper.getSpacing(context, base: 16),
           ),
           decoration: BoxDecoration(
-            color: const Color(0xFF1976D2).withOpacity(0.1),
+            color: const Color(0xFF1976D2),
             shape: BoxShape.circle,
           ),
           child: Icon(

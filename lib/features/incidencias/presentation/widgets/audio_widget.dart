@@ -1,4 +1,9 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_sound/flutter_sound.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../../utils/responsive_helper.dart';
 
 enum AudioState { idle, recording, paused, recorded, playing }
@@ -26,10 +31,22 @@ class _AudioWidgetState extends State<AudioWidget>
   
   late AnimationController _pulseController;
   late AnimationController _waveController;
+  
+  // Flutter Sound
+  FlutterSoundRecorder? _recorder;
+  FlutterSoundPlayer? _player;
+  
+  // Timer para el contador
+  Timer? _recordingTimer;
+  Timer? _playbackTimer;
+  
+  String? _currentAudioPath;
 
   @override
   void initState() {
     super.initState();
+    _initializeAudio();
+    
     _pulseController = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
@@ -41,78 +58,266 @@ class _AudioWidgetState extends State<AudioWidget>
     
     if (widget.audioPath != null) {
       _audioState = AudioState.recorded;
+      _currentAudioPath = widget.audioPath;
     }
+  }
+
+  Future<void> _initializeAudio() async {
+    _recorder = FlutterSoundRecorder();
+    _player = FlutterSoundPlayer();
+    
+    await _recorder!.openRecorder();
+    await _player!.openPlayer();
   }
 
   @override
   void dispose() {
+    _recordingTimer?.cancel();
+    _playbackTimer?.cancel();
     _pulseController.dispose();
     _waveController.dispose();
+    _recorder?.closeRecorder();
+    _player?.closePlayer();
     super.dispose();
   }
 
-  void _startRecording() {
-    setState(() {
-      _audioState = AudioState.recording;
-      _recordingDuration = Duration.zero;
-    });
-    _pulseController.repeat();
-    _waveController.repeat();
+  Future<bool> _checkPermissions() async {
+    final microphoneStatus = await Permission.microphone.request();
+    final storageStatus = await Permission.storage.request();
     
-    // TODO: Implementar lógica de grabación de audio
-    // Aquí deberías integrar con un paquete como audio_recorder o similar
+    return microphoneStatus.isGranted && 
+           (storageStatus.isGranted || storageStatus.isPermanentlyDenied); // En Android 13+ storage no es necesario
   }
 
-  void _pauseRecording() {
-    setState(() {
-      _audioState = AudioState.paused;
-    });
-    _pulseController.stop();
-    _waveController.stop();
-    
-    // TODO: Pausar grabación de audio
+  Future<String> _getAudioPath() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final fileName = 'audio_${DateTime.now().millisecondsSinceEpoch}.aac';
+    return '${directory.path}/$fileName';
   }
 
-  void _stopRecording() {
-    setState(() {
-      _audioState = AudioState.recorded;
-    });
-    _pulseController.stop();
-    _waveController.stop();
-    
-    // TODO: Finalizar grabación y obtener el path del archivo
-    // Por ahora simulamos un path de archivo
-    const String simulatedPath = '/path/to/recorded_audio.m4a';
-    widget.onAudioRecorded(simulatedPath);
+  Future<void> _startRecording() async {
+    if (!await _checkPermissions()) {
+      _showPermissionDialog();
+      return;
+    }
+
+    try {
+      final audioPath = await _getAudioPath();
+      
+      await _recorder!.startRecorder(
+        toFile: audioPath,
+        codec: Codec.aacADTS,
+      );
+
+      setState(() {
+        _audioState = AudioState.recording;
+        _recordingDuration = Duration.zero;
+        _currentAudioPath = audioPath;
+      });
+
+      _pulseController.repeat();
+      _waveController.repeat();
+      
+      // Iniciar el timer para el contador
+      _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (mounted) {
+          setState(() {
+            _recordingDuration = Duration(seconds: timer.tick);
+          });
+        }
+      });
+
+    } catch (e) {
+      debugPrint('Error al iniciar grabación: $e');
+      _showErrorDialog('Error al iniciar la grabación');
+    }
   }
 
-  void _playAudio() {
-    setState(() {
-      _audioState = AudioState.playing;
-      _playbackDuration = Duration.zero;
-    });
-    _waveController.repeat();
-    
-    // TODO: Reproducir audio
-    // Simular reproducción por 3 segundos
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        setState(() {
-          _audioState = AudioState.recorded;
-        });
-        _waveController.stop();
-      }
-    });
+  Future<void> _pauseRecording() async {
+    try {
+      await _recorder!.pauseRecorder();
+      
+      setState(() {
+        _audioState = AudioState.paused;
+      });
+      
+      _recordingTimer?.cancel();
+      _pulseController.stop();
+      _waveController.stop();
+      
+    } catch (e) {
+      debugPrint('Error al pausar grabación: $e');
+    }
+  }
+
+  Future<void> _resumeRecording() async {
+    try {
+      await _recorder!.resumeRecorder();
+      
+      setState(() {
+        _audioState = AudioState.recording;
+      });
+      
+      _pulseController.repeat();
+      _waveController.repeat();
+      
+      // Reanudar el timer desde donde se quedó
+      final currentSeconds = _recordingDuration.inSeconds;
+      _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (mounted) {
+          setState(() {
+            _recordingDuration = Duration(seconds: currentSeconds + timer.tick);
+          });
+        }
+      });
+      
+    } catch (e) {
+      debugPrint('Error al reanudar grabación: $e');
+    }
+  }
+
+  Future<void> _stopRecording() async {
+    try {
+      await _recorder!.stopRecorder();
+      
+      _recordingTimer?.cancel();
+      
+      setState(() {
+        _audioState = AudioState.recorded;
+        _totalDuration = _recordingDuration;
+      });
+      
+      _pulseController.stop();
+      _waveController.stop();
+      
+      widget.onAudioRecorded(_currentAudioPath);
+      
+    } catch (e) {
+      debugPrint('Error al detener grabación: $e');
+      _showErrorDialog('Error al detener la grabación');
+    }
+  }
+
+  Future<void> _playAudio() async {
+    if (_currentAudioPath == null) return;
+
+    try {
+      setState(() {
+        _audioState = AudioState.playing;
+        _playbackDuration = Duration.zero;
+      });
+      
+      _waveController.repeat();
+
+      await _player!.startPlayer(
+        fromURI: _currentAudioPath,
+        whenFinished: () {
+          if (mounted) {
+            setState(() {
+              _audioState = AudioState.recorded;
+              _playbackDuration = Duration.zero;
+            });
+            _waveController.stop();
+            _playbackTimer?.cancel();
+          }
+        },
+      );
+
+      // Timer para actualizar el progreso de reproducción
+      _playbackTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+        if (mounted && _audioState == AudioState.playing) {
+          setState(() {
+            _playbackDuration = Duration(milliseconds: timer.tick * 100);
+            // Si llegamos al final, parar
+            if (_playbackDuration >= _totalDuration) {
+              _playbackDuration = _totalDuration;
+            }
+          });
+        }
+      });
+
+    } catch (e) {
+      debugPrint('Error al reproducir audio: $e');
+      setState(() {
+        _audioState = AudioState.recorded;
+      });
+      _waveController.stop();
+    }
+  }
+
+  Future<void> _stopPlaying() async {
+    try {
+      await _player!.stopPlayer();
+      _playbackTimer?.cancel();
+      
+      setState(() {
+        _audioState = AudioState.recorded;
+        _playbackDuration = Duration.zero;
+      });
+      
+      _waveController.stop();
+      
+    } catch (e) {
+      debugPrint('Error al detener reproducción: $e');
+    }
   }
 
   void _deleteAudio() {
+    if (_currentAudioPath != null) {
+      final file = File(_currentAudioPath!);
+      if (file.existsSync()) {
+        file.deleteSync();
+      }
+    }
+    
     setState(() {
       _audioState = AudioState.idle;
       _recordingDuration = Duration.zero;
       _playbackDuration = Duration.zero;
       _totalDuration = Duration.zero;
+      _currentAudioPath = null;
     });
+    
     widget.onAudioRecorded(null);
+  }
+
+  void _showPermissionDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Permisos requeridos'),
+        content: const Text('Esta aplicación necesita acceso al micrófono para grabar audio.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAppSettings();
+            },
+            child: const Text('Configuración'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -164,7 +369,7 @@ class _AudioWidgetState extends State<AudioWidget>
     return AnimatedBuilder(
       animation: _waveController,
       builder: (context, child) {
-        return Container(
+        return SizedBox(
           height: ResponsiveHelper.getSpacing(context, base: 60),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -221,8 +426,9 @@ class _AudioWidgetState extends State<AudioWidget>
       children: [
         _buildControlButton(),
         if (_audioState == AudioState.recording) _buildPauseButton(),
-        if (_audioState == AudioState.recorded || _audioState == AudioState.playing)
-          _buildPlayButton(),
+        if (_audioState == AudioState.paused) _buildResumeButton(),
+        if (_audioState == AudioState.recorded) _buildPlayButton(),
+        if (_audioState == AudioState.playing) _buildStopPlayButton(),
         if (_audioState != AudioState.idle) _buildDeleteButton(),
       ],
     );
@@ -247,7 +453,7 @@ class _AudioWidgetState extends State<AudioWidget>
       case AudioState.paused:
         icon = Icons.fiber_manual_record;
         color = Colors.orange;
-        onPressed = _startRecording;
+        onPressed = _resumeRecording;
         break;
       default:
         icon = Icons.mic;
@@ -268,7 +474,7 @@ class _AudioWidgetState extends State<AudioWidget>
               boxShadow: _audioState == AudioState.recording
                   ? [
                       BoxShadow(
-                        color: color.withOpacity(0.3),
+                        color: color,
                         blurRadius: 10,
                         spreadRadius: 2,
                       ),
@@ -315,9 +521,9 @@ class _AudioWidgetState extends State<AudioWidget>
     );
   }
 
-  Widget _buildPlayButton() {
+  Widget _buildResumeButton() {
     return ElevatedButton(
-      onPressed: _audioState == AudioState.playing ? null : _playAudio,
+      onPressed: _resumeRecording,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.green,
         foregroundColor: Colors.white,
@@ -327,7 +533,43 @@ class _AudioWidgetState extends State<AudioWidget>
         ),
       ),
       child: Icon(
-        _audioState == AudioState.playing ? Icons.pause : Icons.play_arrow,
+        Icons.fiber_manual_record,
+        size: ResponsiveHelper.getIconSize(context, base: 20),
+      ),
+    );
+  }
+
+  Widget _buildPlayButton() {
+    return ElevatedButton(
+      onPressed: _playAudio,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.green,
+        foregroundColor: Colors.white,
+        shape: const CircleBorder(),
+        padding: EdgeInsets.all(
+          ResponsiveHelper.getSpacing(context, base: 12),
+        ),
+      ),
+      child: Icon(
+        Icons.play_arrow,
+        size: ResponsiveHelper.getIconSize(context, base: 20),
+      ),
+    );
+  }
+
+  Widget _buildStopPlayButton() {
+    return ElevatedButton(
+      onPressed: _stopPlaying,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.red,
+        foregroundColor: Colors.white,
+        shape: const CircleBorder(),
+        padding: EdgeInsets.all(
+          ResponsiveHelper.getSpacing(context, base: 12),
+        ),
+      ),
+      child: Icon(
+        Icons.stop,
         size: ResponsiveHelper.getIconSize(context, base: 20),
       ),
     );

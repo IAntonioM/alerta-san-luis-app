@@ -1,6 +1,7 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously
 
 import 'dart:convert';
+import 'package:boton_panico_app/features/splash/presentation/splash_screen.dart';
 import 'package:boton_panico_app/service/user_storage_service.dart';
 import 'package:flutter/material.dart';
 import '../models/ciudadano_model.dart';
@@ -182,8 +183,13 @@ class AuthService {
   }
 
   // Método para cerrar sesión
-  static Future<void> logout() async {
+  static Future<void> logout(BuildContext context) async {
     await UserStorageService.clearUser();
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const SplashScreen()),
+      (Route<dynamic> route) => false,
+    );
   }
 
   // Método para verificar si hay una sesión activa
