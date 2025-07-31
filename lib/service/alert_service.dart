@@ -11,7 +11,7 @@ import 'error_modal_service.dart';
 class AlertService {
   static Future<ApiResponse<String>> registerAlert({
     required BuildContext context,
-    required int categoryId,
+    required String categoryId,
     required String description,
     required double latitude,
     required double longitude,
@@ -79,7 +79,7 @@ class AlertService {
           context,
           title: 'Error del Servidor',
           message:
-              'No se pudo conectar con el servidor. Código: ${response.statusCode}',
+              'No se pudo conectar con el servidor. Código: ${response.statusCode} - Mensaje: ${response.body}',
         );
         return ApiResponse.error('Error en el servidor');
       }

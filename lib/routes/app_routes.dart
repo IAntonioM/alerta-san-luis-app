@@ -10,6 +10,6 @@ class AppRoutes {
     '/home': (context) => const HomeScreen(),
     '/register': (context) => const RegisterScreen(),
     '/splash': (context) => const SplashScreen(),
-    '/incidencia': (context) => const IncidenciaFormScreen(tipo: 'Incidencia'),
+    '/incidencia': (context) => const IncidenciaFormScreen(tipo: 'Incidencia', idCategoria: '1',),
   };
 }

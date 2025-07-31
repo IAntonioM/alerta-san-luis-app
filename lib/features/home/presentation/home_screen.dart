@@ -1,5 +1,8 @@
-// ignore_for_file: unrelated_type_equality_checks, curly_braces_in_flow_control_structures
+// ignore_for_file: unrelated_type_equality_checks, curly_braces_in_flow_control_structures, use_build_context_synchronously
 
+import 'package:boton_panico_app/service/boton_de_panico_service.dart';
+import 'package:boton_panico_app/service/socket_service.dart';
+import 'package:boton_panico_app/service/user_storage_service.dart';
 import 'package:flutter/material.dart';
 import '../../../core/widgets/alert_modal.dart';
 import '../../incidencias/presentation/incidencias_screen.dart';
@@ -170,9 +173,7 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
 
   Widget _buildPanicButton() {
     return GestureDetector(
-      onTap: () {
-        // Acción del botón de pánico (vacía por ahora)
-      },
+      onTap: () => _handlePanicButton(context),
       child: Container(
         width: double.infinity,
         height: 250,
@@ -181,7 +182,7 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
+              color: Colors.black,
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -206,6 +207,161 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _handlePanicButton(BuildContext context) async {
+    // Mostrar confirmación
+    final shouldSend = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('⚠️ BOTÓN DE PÁNICO'),
+        content: const Text('¿Confirmas que necesitas ayuda de emergencia?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('ENVIAR ALERTA',
+                style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSend == true) {
+      _sendPanicAlert();
+    }
+  }
+
+  void _sendPanicAlert() async {
+    // Mostrar loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    final response =
+        await BotonDePanicoService.sendPanicAlert(context: context);
+
+    Navigator.pop(context); // Cerrar loading
+
+    if (response.success) {
+      _showWaitingDialog();
+      _connectSocket();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.error ?? 'Error al enviar alerta'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  void _showWaitingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text('⏳ Esperando respuesta'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const CircularProgressIndicator(),
+            const SizedBox(height: 16),
+            const Text(
+                'Estamos a la espera de una respuesta del personal de seguridad.'),
+            const SizedBox(height: 8),
+            Text('Tiempo restante: 20 segundos',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+      ),
+    );
+
+    // Timer de 20 segundos
+    Future.delayed(const Duration(seconds: 20), () {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+        _showTimeoutAlert();
+      }
+    });
+  }
+
+  void _connectSocket() async {
+    final userId = await UserStorageService.getUserId();
+    if (userId != null) {
+      SocketService.connect(userId);
+
+      SocketService.onAlertaAceptada((data) {
+        if (data['id'] == userId) {
+          Navigator.pop(context); // Cerrar diálogo
+          _showSuccessAlert();
+        }
+      });
+
+      SocketService.onAlertaNoRespondida((data) {
+        if (data['id'] == userId) {
+          Navigator.pop(context); // Cerrar diálogo
+          _showNoResponseAlert();
+        }
+      });
+    }
+  }
+
+  void _showSuccessAlert() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('✔️ Alerta recibida'),
+        content:
+            const Text('Tu alerta fue aceptada. Recibirás atención en breve.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTimeoutAlert() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('⚠️ Tiempo agotado'),
+        content: const Text('Ningún agente respondió a tiempo.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNoResponseAlert() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('⚠️ Alerta no respondida'),
+        content: const Text('Ningún agente respondió a tu alerta.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
       ),
     );
   }
@@ -338,6 +494,12 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
     );
   }
 
+  @override
+  void dispose() {
+    SocketService.disconnect();
+    super.dispose();
+  }
+
   IconData _getDefaultIcon() {
     return Icons.emergency;
   }
@@ -433,6 +595,7 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
                   MaterialPageRoute(
                     builder: (_) => IncidenciaFormScreen(
                       tipo: incidenciaMenus[i].nomCategoria,
+                      idCategoria: incidenciaMenus[i].idCategoria.toString(),
                     ),
                   ),
                 );
@@ -471,10 +634,13 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
                     MaterialPageRoute(
                       builder: (_) => IncidenciaFormScreen(
                         tipo: incidenciaMenus[i + 1].nomCategoria,
+                        idCategoria: incidenciaMenus[i+1].idCategoria.toString(),
                       ),
                     ),
                   );
                 }
+                print("id categoria:");
+                print(incidenciaMenus[i + 1].idCategoria.toString());
               },
             ),
           ),

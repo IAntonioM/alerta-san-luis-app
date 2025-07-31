@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // Nueva URL base según la documentación
-  static const String baseUrl = 'https://2b2f17ac1afe.ngrok-free.app';
+  static const String baseUrl = 'https://733cbe01c49c.ngrok-free.app';
 
   static Map<String, String> get headers => {
         'Content-Type': 'application/json',
@@ -68,7 +68,13 @@ class ApiService {
   static Future<http.StreamedResponse> postMultipartFormData(
       String endpoint, Map<String, String> fields) async {
     final url = Uri.parse('$baseUrl$endpoint');
+    final token = await UserStorageService.getToken();
+    
     var request = http.MultipartRequest('POST', url);
+
+    if(token != null){
+      request.headers['Authorization'] = 'Bearer $token';
+    }
 
     // Agregar todos los campos
     request.fields.addAll(fields);
