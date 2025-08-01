@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../service/alert_service.dart';
 import '../../../utils/responsive_helper.dart';
 import '../../../service/user_storage_service.dart';
@@ -34,11 +35,19 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
   String? _userId;
   String? _email;
   String? _phone;
+  bool _isAutoSending = false;
 
   @override
   void initState() {
     super.initState();
     _initUserData();
+    
+    // Si es categoría 1, activar modo automático
+    if (widget.idCategoria == '1') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _activarModoAutomatico();
+      });
+    }
   }
 
   Future<void> _initUserData() async {
@@ -56,6 +65,105 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
       }
     } catch (e) {
       print('Error al cargar datos del usuario: $e');
+    }
+  }
+
+  Future<void> _activarModoAutomatico() async {
+    setState(() {
+      _isAutoSending = true;
+    });
+
+    try {
+      // Mostrar diálogo de carga
+      _showAutoSendingDialog();
+
+      // Activar cámara automáticamente
+      await _tomarFotoAutomatica();
+      
+      if (_imagenSeleccionada != null) {
+        // Configurar valores por defecto
+        descripcionController.text = "Alerta de emergencia - ${widget.tipo}";
+        gravedad = 5.0; // Máxima gravedad por defecto para emergencias
+        
+        // Enviar automáticamente
+        await _enviarAlerta();
+      } else {
+        // Si no se tomó foto, mostrar formulario normal
+        setState(() {
+          _isAutoSending = false;
+        });
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context); // Cerrar diálogo de carga
+        }
+        _showErrorMessage("No se pudo tomar la foto. Completa el formulario manualmente.");
+      }
+    } catch (e) {
+      setState(() {
+        _isAutoSending = false;
+      });
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context); // Cerrar diálogo de carga
+      }
+      _showErrorMessage("Error en envío automático: ${e.toString()}");
+    }
+  }
+
+  void _showAutoSendingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                color: Color(0xFF1976D2),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Tomando foto y enviando alerta automáticamente...',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showErrorMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.orange,
+        duration: Duration(seconds: 4),
+      ),
+    );
+  }
+
+  Future<void> _tomarFotoAutomatica() async {
+    final picker = ImagePicker();
+    
+    try {
+      // Intentar abrir la cámara directamente
+      final imagen = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 85,
+        maxWidth: 1200,
+        maxHeight: 1200,
+      );
+      
+      if (imagen != null) {
+        setState(() {
+          _imagenSeleccionada = File(imagen.path);
+        });
+        print('Foto tomada automáticamente: ${imagen.path}');
+      }
+    } catch (e) {
+      print('Error al tomar foto automática: $e');
+      throw Exception('Error al acceder a la cámara');
     }
   }
 
@@ -217,6 +325,11 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
       print(response);
 
       if (response.success) {
+        // Cerrar diálogo de carga si está abierto
+        if (Navigator.canPop(context) && _isAutoSending) {
+          Navigator.pop(context);
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response.data ?? 'Alerta enviada exitosamente'),
@@ -228,6 +341,11 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
         throw Exception(response.error);
       }
     } catch (e) {
+      // Cerrar diálogo de carga si está abierto
+      if (Navigator.canPop(context) && _isAutoSending) {
+        Navigator.pop(context);
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
@@ -237,12 +355,40 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
     } finally {
       setState(() {
         _isLoading = false;
+        _isAutoSending = false;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Si está en modo automático, mostrar una pantalla de carga simple
+    if (_isAutoSending) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                color: Color(0xFF1976D2),
+              ),
+              SizedBox(height: 24),
+              Text(
+                'Preparando alerta de emergencia...',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF333333),
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: _buildAppBar(),

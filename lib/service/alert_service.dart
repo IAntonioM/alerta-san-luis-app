@@ -62,18 +62,18 @@ class AlertService {
         if (responseData['RESULTADO'] == 1) {
           await ErrorModalService.showSuccessModal(
             context,
-            title: 'Alerta Registrada',
+            title: 'Alerta enviada',
             message: responseData['MENSAJE'] ??
-                'La alerta se registró correctamente',
+                'La alerta se envió correctamente',
           );
           return ApiResponse.success(responseData['MENSAJE']);
         } else {
           await ErrorModalService.showErrorModal(
             context,
-            title: 'Error en el Registro',
-            message: responseData['MENSAJE'] ?? 'Error al registrar alerta',
+            title: 'Error en el envio',
+            message: responseData['MENSAJE'] ?? 'Error al enviar la alerta',
           );
-          return ApiResponse.error('Error al registrar alerta');
+          return ApiResponse.error('Error al enviar la alerta');
         }
       } else {
         await ErrorModalService.showErrorModal(

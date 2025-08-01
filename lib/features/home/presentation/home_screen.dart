@@ -728,28 +728,16 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
             text: incidenciaMenus[i].nomCategoria,
             color: _getColorForCategory(incidenciaMenus[i].nomCategoria),
             onTap: () {
-              if (incidenciaMenus[i]
-                  .nomCategoria
-                  .toLowerCase()
-                  .contains('alerta')) {
-                // Acción para alerta rápida
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content:
-                          Text('${incidenciaMenus[i].nomCategoria} activada')),
-                );
-              } else {
-                // Navegar al formulario
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => IncidenciaFormScreen(
-                      tipo: incidenciaMenus[i].nomCategoria,
-                      idCategoria: incidenciaMenus[i].idCategoria.toString(),
+              Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => IncidenciaFormScreen(
+                        tipo: incidenciaMenus[i].nomCategoria,
+                        idCategoria:
+                            incidenciaMenus[i].idCategoria.toString(),
+                      ),
                     ),
-                  ),
-                );
-              }
+                  );
             },
           ),
         ),

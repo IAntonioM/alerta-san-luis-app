@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // Nueva URL base según la documentación
-  static const String baseUrl = 'https://733cbe01c49c.ngrok-free.app';
+  static const String baseUrl = 'http://161.132.177.168:8090';
 
   static Map<String, String> get headers => {
         'Content-Type': 'application/json',
