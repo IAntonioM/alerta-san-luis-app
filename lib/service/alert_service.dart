@@ -82,7 +82,6 @@ class AlertService {
           message:
               'No se pudo conectar con el servidor. Código: ${response.statusCode} - Mensaje: ${response.body}',
         );        
-        await AuthService.logout(context);
         return ApiResponse.error('Error en el servidor');
       }
     } catch (e) {

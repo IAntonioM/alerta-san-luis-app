@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously
 
+import 'package:boton_panico_app/service/optimizar_imagen_service.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'dart:convert';
@@ -41,7 +42,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
   void initState() {
     super.initState();
     _initUserData();
-    
+
     // Si es categoría 1, activar modo automático
     if (widget.idCategoria == '1') {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -79,12 +80,12 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
 
       // Activar cámara automáticamente
       await _tomarFotoAutomatica();
-      
+
       if (_imagenSeleccionada != null) {
         // Configurar valores por defecto
         descripcionController.text = "Alerta de emergencia - ${widget.tipo}";
         gravedad = 5.0; // Máxima gravedad por defecto para emergencias
-        
+
         // Enviar automáticamente
         await _enviarAlerta();
       } else {
@@ -95,7 +96,8 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
         if (Navigator.canPop(context)) {
           Navigator.pop(context); // Cerrar diálogo de carga
         }
-        _showErrorMessage("No se pudo tomar la foto. Completa el formulario manualmente.");
+        _showErrorMessage(
+            "No se pudo tomar la foto. Completa el formulario manualmente.");
       }
     } catch (e) {
       setState(() {
@@ -145,7 +147,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
 
   Future<void> _tomarFotoAutomatica() async {
     final picker = ImagePicker();
-    
+
     try {
       // Intentar abrir la cámara directamente
       final imagen = await picker.pickImage(
@@ -154,12 +156,14 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
         maxWidth: 1200,
         maxHeight: 1200,
       );
-      
+
       if (imagen != null) {
+        final imageFile = File(imagen.path);
+        final optimizedImage =
+            await ImageOptimizationService.optimizeImage(imageFile);
         setState(() {
-          _imagenSeleccionada = File(imagen.path);
+          _imagenSeleccionada = optimizedImage;
         });
-        print('Foto tomada automáticamente: ${imagen.path}');
       }
     } catch (e) {
       print('Error al tomar foto automática: $e');
@@ -244,20 +248,22 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
   // Función para convertir audio a base64 y crear un File temporal
   Future<File?> _createAudioFileForUpload() async {
     if (_audioPath == null) return null;
-    
+
     try {
       final audioFile = File(_audioPath!);
       final audioBytes = await audioFile.readAsBytes();
       final audioBase64 = base64Encode(audioBytes);
-      
+
       // Crear un archivo temporal con el contenido base64
       final tempDir = Directory.systemTemp;
-      final tempFile = File('${tempDir.path}/temp_audio_${DateTime.now().millisecondsSinceEpoch}.mp3');
-      
+      final tempFile = File(
+          '${tempDir.path}/temp_audio_${DateTime.now().millisecondsSinceEpoch}.mp3');
+
       // Escribir los bytes originales del audio al archivo temporal
       await tempFile.writeAsBytes(audioBytes);
-      
-      print('Audio convertido para envío - Tamaño: ${audioBase64.length} bytes');
+
+      print(
+          'Audio convertido para envío - Tamaño: ${audioBase64.length} bytes');
       return tempFile;
     } catch (e) {
       print('Error al procesar audio: $e');
@@ -297,7 +303,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
       if (widget.idCategoria == '8') {
         fileToSend = await _createAudioFileForUpload();
         fileName = _getAudioFileName();
-        
+
         if (fileToSend == null) {
           throw Exception('Error al procesar el archivo de audio');
         }
@@ -318,8 +324,9 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
         citizenId: _userId!,
         email: _email!,
         phone: _phone!,
-        imageFile: fileToSend, // Aquí se envía imagen o audio según la categoría
-        fileName: fileName,    // Nombre del archivo (imagen o audio)
+        imageFile:
+            fileToSend, // Aquí se envía imagen o audio según la categoría
+        fileName: fileName, // Nombre del archivo (imagen o audio)
       );
 
       print(response);
@@ -329,7 +336,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
         if (Navigator.canPop(context) && _isAutoSending) {
           Navigator.pop(context);
         }
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(response.data ?? 'Alerta enviada exitosamente'),
@@ -345,7 +352,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
       if (Navigator.canPop(context) && _isAutoSending) {
         Navigator.pop(context);
       }
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error: ${e.toString()}'),
@@ -562,10 +569,10 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
       hasMediaFile = _imagenSeleccionada != null;
     }
 
-    final isFormValid = descripcionController.text.isNotEmpty && 
-                       gravedad > 0 && 
-                       hasMediaFile && 
-                       !_isLoading;
+    final isFormValid = descripcionController.text.isNotEmpty &&
+        gravedad > 0 &&
+        hasMediaFile &&
+        !_isLoading;
 
     return AnimatedContainer(
       duration: ResponsiveHelper.getAnimationDuration(),

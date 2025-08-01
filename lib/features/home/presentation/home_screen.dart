@@ -409,32 +409,41 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
   void _showWaitingDialog() {
     _remainingSeconds = 20; // Reiniciar contador
 
+    // Variable para guardar la referencia del setState del StatefulBuilder
+    late StateSetter dialogSetState;
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: const Text('⏳ Esperando respuesta'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(height: 16),
-              const Text(
-                  'Estamos a la espera de una respuesta del personal de seguridad.'),
-              const SizedBox(height: 8),
-              Text('Tiempo restante: $_remainingSeconds segundos',
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
-            ],
-          ),
-        ),
+        builder: (context, setState) {
+          // Guardar la referencia del setState del diálogo
+          dialogSetState = setState;
+
+          return AlertDialog(
+            title: const Text('⏳ Esperando respuesta'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                const Text(
+                    'Estamos a la espera de una respuesta del personal de seguridad.'),
+                const SizedBox(height: 8),
+                Text('Tiempo restante: $_remainingSeconds segundos',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+          );
+        },
       ),
     );
 
     // Iniciar timer
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingSeconds > 0) {
-        setState(() {
+        // Usar el setState del StatefulBuilder
+        dialogSetState(() {
           _remainingSeconds--;
         });
       } else {
@@ -729,15 +738,14 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
             color: _getColorForCategory(incidenciaMenus[i].nomCategoria),
             onTap: () {
               Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => IncidenciaFormScreen(
-                        tipo: incidenciaMenus[i].nomCategoria,
-                        idCategoria:
-                            incidenciaMenus[i].idCategoria.toString(),
-                      ),
-                    ),
-                  );
+                context,
+                MaterialPageRoute(
+                  builder: (_) => IncidenciaFormScreen(
+                    tipo: incidenciaMenus[i].nomCategoria,
+                    idCategoria: incidenciaMenus[i].idCategoria.toString(),
+                  ),
+                ),
+              );
             },
           ),
         ),

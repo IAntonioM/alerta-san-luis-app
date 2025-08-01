@@ -1,3 +1,4 @@
+import 'package:boton_panico_app/service/optimizar_imagen_service.dart';
 import 'package:boton_panico_app/utils/responsive_helper.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
@@ -30,7 +31,11 @@ class _CamaraWidgetState extends State<CamaraWidget> {
         imageQuality: 85,
       );
       if (imagen != null) {
-        widget.onImageSelected(File(imagen.path));
+        // Optimizar la imagen antes de asignarla
+        final imageFile = File(imagen.path);
+        final optimizedImage =
+            await ImageOptimizationService.optimizeImage(imageFile);
+        widget.onImageSelected(optimizedImage);
       }
       return;
     }
@@ -115,20 +120,24 @@ class _CamaraWidgetState extends State<CamaraWidget> {
         ),
         SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
         GestureDetector(
-          onTap: widget.isAutoMode ? null : _seleccionarImagen, // Deshabilitar tap en modo auto
+          onTap: widget.isAutoMode
+              ? null
+              : _seleccionarImagen, // Deshabilitar tap en modo auto
           child: AnimatedContainer(
             duration: ResponsiveHelper.getAnimationDuration(),
             curve: ResponsiveHelper.getAnimationCurve(),
             height: imageHeight,
             width: double.infinity,
             decoration: BoxDecoration(
-              color: widget.isAutoMode 
-                  ? Colors.grey.shade100 
+              color: widget.isAutoMode
+                  ? Colors.grey.shade100
                   : Colors.grey.shade50,
               border: Border.all(
                 color: widget.imagenSeleccionada != null
                     ? const Color(0xFF1976D2)
-                    : (widget.isAutoMode ? Colors.grey.shade400 : Colors.grey.shade300),
+                    : (widget.isAutoMode
+                        ? Colors.grey.shade400
+                        : Colors.grey.shade300),
                 width: widget.imagenSeleccionada != null ? 2.0 : 1.5,
               ),
               borderRadius: ResponsiveHelper.getImageBorderRadius(context),
