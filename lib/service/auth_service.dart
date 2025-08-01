@@ -161,13 +161,28 @@ class AuthService {
               data['message'] ?? 'Credenciales incorrectas');
         }
       } else {
+        // Parsear la respuesta para obtener el mensaje de error de la API
+        String errorMessage =
+            'No se pudo iniciar sesión. Código: ${response.statusCode}';
+
+        try {
+          final errorData = jsonDecode(response.body);
+          if (errorData is Map<String, dynamic> &&
+              errorData['message'] != null) {
+            errorMessage = errorData['message'];
+          }
+        } catch (parseError) {
+          print('Error al parsear respuesta de error: $parseError');
+          // Si no se puede parsear, usar el mensaje por defecto
+        }
+
         // Mostrar modal de error del servidor
         await ErrorModalService.showErrorModal(
           context,
-          title: 'Error del Servidor',
-          message: 'No se pudo iniciar sesión. Código: ${response.statusCode}',
+          title: 'No se pudo iniciar sesión',
+          message: errorMessage,
         );
-        return ApiResponse.error('Error en el login: ${response.statusCode}');
+        return ApiResponse.error('Error en el login: $errorMessage');
       }
     } catch (e) {
       print('Error en loginCitizen: $e');
