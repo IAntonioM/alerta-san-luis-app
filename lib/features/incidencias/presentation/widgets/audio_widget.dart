@@ -28,25 +28,25 @@ class _AudioWidgetState extends State<AudioWidget>
   Duration _recordingDuration = Duration.zero;
   Duration _playbackDuration = Duration.zero;
   Duration _totalDuration = Duration.zero;
-  
+
   late AnimationController _pulseController;
   late AnimationController _waveController;
-  
+
   // Flutter Sound
   FlutterSoundRecorder? _recorder;
   FlutterSoundPlayer? _player;
-  
+
   // Timer para el contador
   Timer? _recordingTimer;
   Timer? _playbackTimer;
-  
+
   String? _currentAudioPath;
 
   @override
   void initState() {
     super.initState();
     _initializeAudio();
-    
+
     _pulseController = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
@@ -55,7 +55,7 @@ class _AudioWidgetState extends State<AudioWidget>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     if (widget.audioPath != null) {
       _audioState = AudioState.recorded;
       _currentAudioPath = widget.audioPath;
@@ -66,7 +66,7 @@ class _AudioWidgetState extends State<AudioWidget>
     try {
       _recorder = FlutterSoundRecorder();
       _player = FlutterSoundPlayer();
-      
+
       // Verificar permisos antes de abrir el recorder
       final hasPermissions = await _requestPermissions();
       if (!hasPermissions) {
@@ -74,7 +74,7 @@ class _AudioWidgetState extends State<AudioWidget>
         await _player!.openPlayer(); // Solo abrir el player
         return;
       }
-      
+
       await _recorder!.openRecorder();
       await _player!.openPlayer();
       debugPrint('Audio inicializado correctamente');
@@ -105,22 +105,22 @@ class _AudioWidgetState extends State<AudioWidget>
     try {
       // Verificar permisos actuales
       PermissionStatus microphoneStatus = await Permission.microphone.status;
-      
+
       debugPrint('Estado actual del micrófono: $microphoneStatus');
-      
+
       // Si ya está concedido, retornar true
       if (microphoneStatus.isGranted) {
         debugPrint('Permisos ya concedidos');
         return true;
       }
-      
+
       // Si está denegado permanentemente, mostrar diálogo
       if (microphoneStatus.isPermanentlyDenied) {
         debugPrint('Permisos denegados permanentemente');
         _showPermissionDeniedDialog();
         return false;
       }
-      
+
       // Solicitar permisos si no están concedidos
       if (microphoneStatus.isDenied || microphoneStatus.isRestricted) {
         debugPrint('Solicitando permisos de micrófono...');
@@ -138,7 +138,8 @@ class _AudioWidgetState extends State<AudioWidget>
         return false;
       } else {
         debugPrint('Permisos denegados: $microphoneStatus');
-        _showErrorDialog('Se requieren permisos de micrófono para grabar audio. Estado: $microphoneStatus');
+        _showErrorDialog(
+            'Se requieren permisos de micrófono para grabar audio. Estado: $microphoneStatus');
         return false;
       }
     } catch (e) {
@@ -174,7 +175,6 @@ class _AudioWidgetState extends State<AudioWidget>
     );
   }
 
-
   Future<void> _startRecording() async {
     try {
       // Verificar si el recorder está inicializado
@@ -191,7 +191,7 @@ class _AudioWidgetState extends State<AudioWidget>
 
       final audioPath = await _getAudioPath();
       debugPrint('Iniciando grabación en: $audioPath');
-      
+
       await _recorder!.startRecorder(
         toFile: audioPath,
         codec: Codec.aacADTS,
@@ -205,7 +205,7 @@ class _AudioWidgetState extends State<AudioWidget>
 
       _pulseController.repeat();
       _waveController.repeat();
-      
+
       // Iniciar el timer para el contador
       _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (mounted) {
@@ -216,7 +216,6 @@ class _AudioWidgetState extends State<AudioWidget>
       });
 
       debugPrint('Grabación iniciada exitosamente');
-
     } catch (e) {
       debugPrint('Error al iniciar grabación: $e');
       setState(() {
@@ -229,15 +228,14 @@ class _AudioWidgetState extends State<AudioWidget>
   Future<void> _pauseRecording() async {
     try {
       await _recorder!.pauseRecorder();
-      
+
       setState(() {
         _audioState = AudioState.paused;
       });
-      
+
       _recordingTimer?.cancel();
       _pulseController.stop();
       _waveController.stop();
-      
     } catch (e) {
       debugPrint('Error al pausar grabación: $e');
     }
@@ -246,14 +244,14 @@ class _AudioWidgetState extends State<AudioWidget>
   Future<void> _resumeRecording() async {
     try {
       await _recorder!.resumeRecorder();
-      
+
       setState(() {
         _audioState = AudioState.recording;
       });
-      
+
       _pulseController.repeat();
       _waveController.repeat();
-      
+
       // Reanudar el timer desde donde se quedó
       final currentSeconds = _recordingDuration.inSeconds;
       _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -263,7 +261,6 @@ class _AudioWidgetState extends State<AudioWidget>
           });
         }
       });
-      
     } catch (e) {
       debugPrint('Error al reanudar grabación: $e');
     }
@@ -272,19 +269,18 @@ class _AudioWidgetState extends State<AudioWidget>
   Future<void> _stopRecording() async {
     try {
       await _recorder!.stopRecorder();
-      
+
       _recordingTimer?.cancel();
-      
+
       setState(() {
         _audioState = AudioState.recorded;
         _totalDuration = _recordingDuration;
       });
-      
+
       _pulseController.stop();
       _waveController.stop();
-      
+
       widget.onAudioRecorded(_currentAudioPath);
-      
     } catch (e) {
       debugPrint('Error al detener grabación: $e');
       _showErrorDialog('Error al detener la grabación');
@@ -299,7 +295,7 @@ class _AudioWidgetState extends State<AudioWidget>
         _audioState = AudioState.playing;
         _playbackDuration = Duration.zero;
       });
-      
+
       _waveController.repeat();
 
       await _player!.startPlayer(
@@ -317,7 +313,8 @@ class _AudioWidgetState extends State<AudioWidget>
       );
 
       // Timer para actualizar el progreso de reproducción
-      _playbackTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      _playbackTimer =
+          Timer.periodic(const Duration(milliseconds: 100), (timer) {
         if (mounted && _audioState == AudioState.playing) {
           setState(() {
             _playbackDuration = Duration(milliseconds: timer.tick * 100);
@@ -328,7 +325,6 @@ class _AudioWidgetState extends State<AudioWidget>
           });
         }
       });
-
     } catch (e) {
       debugPrint('Error al reproducir audio: $e');
       setState(() {
@@ -342,14 +338,13 @@ class _AudioWidgetState extends State<AudioWidget>
     try {
       await _player!.stopPlayer();
       _playbackTimer?.cancel();
-      
+
       setState(() {
         _audioState = AudioState.recorded;
         _playbackDuration = Duration.zero;
       });
-      
+
       _waveController.stop();
-      
     } catch (e) {
       debugPrint('Error al detener reproducción: $e');
     }
@@ -362,7 +357,7 @@ class _AudioWidgetState extends State<AudioWidget>
         file.deleteSync();
       }
     }
-    
+
     setState(() {
       _audioState = AudioState.idle;
       _recordingDuration = Duration.zero;
@@ -370,10 +365,10 @@ class _AudioWidgetState extends State<AudioWidget>
       _totalDuration = Duration.zero;
       _currentAudioPath = null;
     });
-    
+
     widget.onAudioRecorded(null);
   }
-  
+
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -414,8 +409,8 @@ class _AudioWidgetState extends State<AudioWidget>
             borderRadius: ResponsiveHelper.getImageBorderRadius(context),
             border: Border.all(
               color: _audioState != AudioState.idle
-                  ? const Color(0xFF1976D2)
-                  : Colors.grey.shade300,
+                  ? const Color(0xFF099AD7)
+                  : const Color(0xFFAFB5B3),
               width: _audioState != AudioState.idle ? 2.0 : 1.5,
             ),
           ),
@@ -425,7 +420,8 @@ class _AudioWidgetState extends State<AudioWidget>
               SizedBox(height: ResponsiveHelper.getSpacing(context, base: 16)),
               _buildAudioControls(),
               if (_audioState != AudioState.idle) ...[
-                SizedBox(height: ResponsiveHelper.getSpacing(context, base: 12)),
+                SizedBox(
+                    height: ResponsiveHelper.getSpacing(context, base: 12)),
                 _buildDurationInfo(),
               ],
             ],
@@ -451,15 +447,17 @@ class _AudioWidgetState extends State<AudioWidget>
                   curve: Interval(delay, 1.0, curve: Curves.easeInOut),
                 ),
               );
-              
+
               return AnimatedBuilder(
                 animation: animation,
                 builder: (context, child) {
                   return Container(
                     width: ResponsiveHelper.getSpacing(context, base: 4),
-                    height: ResponsiveHelper.getSpacing(context, base: 30) * 
-                           (_audioState == AudioState.recording || 
-                            _audioState == AudioState.playing ? animation.value : 0.3),
+                    height: ResponsiveHelper.getSpacing(context, base: 30) *
+                        (_audioState == AudioState.recording ||
+                                _audioState == AudioState.playing
+                            ? animation.value
+                            : 0.3),
                     margin: EdgeInsets.symmetric(
                       horizontal: ResponsiveHelper.getSpacing(context, base: 2),
                     ),
@@ -480,13 +478,13 @@ class _AudioWidgetState extends State<AudioWidget>
   Color _getVisualizerColor() {
     switch (_audioState) {
       case AudioState.recording:
-        return Colors.red;
+        return const Color(0xFFCD2036);
       case AudioState.playing:
-        return const Color(0xFF1976D2);
+        return const Color(0xFF099AD7);
       case AudioState.recorded:
-        return Colors.green;
+        return const Color(0xFF56A049);
       default:
-        return Colors.grey.shade400;
+        return const Color(0xFFAFB5B3);
     }
   }
 
@@ -512,7 +510,7 @@ class _AudioWidgetState extends State<AudioWidget>
     switch (_audioState) {
       case AudioState.idle:
         icon = Icons.mic;
-        color = const Color(0xFF1976D2);
+        color = const Color(0xFF099AD7);
         onPressed = _startRecording;
         break;
       case AudioState.recording:
@@ -535,7 +533,7 @@ class _AudioWidgetState extends State<AudioWidget>
       animation: _pulseController,
       builder: (context, child) {
         return Transform.scale(
-          scale: _audioState == AudioState.recording 
+          scale: _audioState == AudioState.recording
               ? 1.0 + (_pulseController.value * 0.1)
               : 1.0,
           child: Container(
@@ -577,7 +575,7 @@ class _AudioWidgetState extends State<AudioWidget>
     return ElevatedButton(
       onPressed: _pauseRecording,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.orange,
+        backgroundColor: Color(0xFFBC966F),
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
         padding: EdgeInsets.all(
@@ -595,7 +593,7 @@ class _AudioWidgetState extends State<AudioWidget>
     return ElevatedButton(
       onPressed: _resumeRecording,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.green,
+        backgroundColor: Color(0xFF56A049),
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
         padding: EdgeInsets.all(
@@ -631,7 +629,7 @@ class _AudioWidgetState extends State<AudioWidget>
     return ElevatedButton(
       onPressed: _stopPlaying,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFFCD2036),
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
         padding: EdgeInsets.all(
@@ -649,7 +647,7 @@ class _AudioWidgetState extends State<AudioWidget>
     return ElevatedButton(
       onPressed: _deleteAudio,
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.red.shade400,
+        backgroundColor: Color(0xFFCD2036),
         foregroundColor: Colors.white,
         shape: const CircleBorder(),
         padding: EdgeInsets.all(
@@ -671,7 +669,8 @@ class _AudioWidgetState extends State<AudioWidget>
         durationText = _formatDuration(_recordingDuration);
         break;
       case AudioState.playing:
-        durationText = '${_formatDuration(_playbackDuration)} / ${_formatDuration(_totalDuration)}';
+        durationText =
+            '${_formatDuration(_playbackDuration)} / ${_formatDuration(_totalDuration)}';
         break;
       case AudioState.recorded:
         durationText = _formatDuration(_totalDuration);
@@ -684,8 +683,8 @@ class _AudioWidgetState extends State<AudioWidget>
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Icon(
-          _audioState == AudioState.recording 
-              ? Icons.fiber_manual_record 
+          _audioState == AudioState.recording
+              ? Icons.fiber_manual_record
               : Icons.audiotrack,
           size: ResponsiveHelper.getIconSize(context, base: 16),
           color: _getVisualizerColor(),

@@ -36,7 +36,7 @@ class CalificacionWidget extends StatelessWidget {
             borderRadius: ResponsiveHelper.getImageBorderRadius(context),
             border: Border.all(
               color:
-                  gravedad > 0 ? const Color(0xFFFFA726) : Colors.grey.shade300,
+                  gravedad > 0 ? const Color(0xFFFFA726) : const Color(0xFFAFB5B3),
               width: gravedad > 0 ? 2.0 : 1.5,
             ),
           ),
@@ -98,12 +98,12 @@ class CalificacionWidget extends StatelessWidget {
   Widget _buildPriorityLabel(BuildContext context) {
     final labels = ['', 'Muy Baja', 'Baja', 'Media', 'Alta', 'Crítica'];
     final colors = [
-      Colors.grey,
-      Colors.green,
-      Colors.lightGreen,
+      const Color(0xFFAFB5B3), 
+      const Color(0xFF56A049), 
+      const Color(0xFF56A049), 
       Colors.orange,
       Colors.deepOrange,
-      Colors.red,
+      const Color(0xFFCD2036), 
     ];
 
     return Container(
@@ -146,11 +146,11 @@ class CalificacionWidget extends StatelessWidget {
       itemBuilder: (context, index) => Icon(
         Icons.star_rounded,
         color:
-            index < gravedad ? const Color(0xFFFFA726) : Colors.grey.shade300,
+            index < gravedad ? const Color(0xFFFFA726) : const Color(0xFFAFB5B3),
       ),
       onRatingUpdate: onRatingChanged,
       glow: false,
-      unratedColor: Colors.grey.shade300,
+      unratedColor: const Color(0xFFAFB5B3),
     );
   }
 }

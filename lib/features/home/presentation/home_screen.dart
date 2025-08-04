@@ -1,7 +1,6 @@
 // ignore_for_file: unrelated_type_equality_checks, curly_braces_in_flow_control_structures, use_build_context_synchronously
 
 import 'dart:async';
-
 import 'package:boton_panico_app/service/boton_de_panico_service.dart';
 import 'package:boton_panico_app/service/error_modal_service.dart';
 import 'package:boton_panico_app/service/socket_service.dart';
@@ -14,33 +13,25 @@ import '../../../service/menu_service.dart';
 import '../../../models/menu_model.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../service/alert_service.dart';
+import 'package:boton_panico_app/core/widgets/custom_dialog_widget.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
   void _showLogoutDialog(BuildContext context) {
-    showDialog(
+    CustomDialog.showConfirmation(
       context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Cerrar Sesión'),
-          content: const Text('¿Estás seguro de que quieres cerrar sesión?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancelar'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _logout(context);
-              },
-              child: const Text('Cerrar Sesión'),
-            ),
-          ],
-        );
-      },
-    );
+      title: 'Cerrar Sesión',
+      message: '¿Estás seguro de que quieres cerrar sesión?',
+      primaryButtonText: 'Cerrar Sesión',
+      secondaryButtonText: 'Cancelar',
+      color: const Color(0xFFC22725), // Rojo
+      icon: Icons.logout,
+    ).then((confirmed) {
+      if (confirmed == true) {
+        _logout(context);
+      }
+    });
   }
 
   void _logout(BuildContext context) {
@@ -53,7 +44,8 @@ class HomeScreen extends StatelessWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          backgroundColor: const Color.fromARGB(255, 2, 14, 179),
+          //colores
+          backgroundColor: const Color.fromARGB(255, 9, 154, 215),
           elevation: 0,
           toolbarHeight: 120,
           title: Row(
@@ -62,7 +54,7 @@ class HomeScreen extends StatelessWidget {
               // Logo de la municipalidad
               Image.asset(
                 'assets/imgs/muni_logo.png',
-                height: ResponsiveHelper.getIconSize(context, base: 50),
+                height: ResponsiveHelper.getIconSize(context, base: 70),
                 fit: BoxFit.contain,
               ),
               // Logo de la app
@@ -166,7 +158,7 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // Construir filas dinámicamente
+            // Construir filas dinámicamente con 3 elementos por fila
             ..._buildDynamicRows(),
             // Botón de pánico
             const SizedBox(height: 20),
@@ -179,25 +171,14 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
 
   Future<void> _handleEmergencyAlert(MenuCategory menu) async {
     // Mostrar confirmación
-    final shouldSend = await showDialog<bool>(
+    final shouldSend = await CustomDialog.showConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('⚠️ ${menu.nomCategoria}'),
-        content: Text(
-            '¿Confirmas que necesitas ${menu.nomCategoria.toLowerCase()}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('ENVIAR ALERTA',
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      title: '⚠️ ${menu.nomCategoria}',
+      message: '¿Confirmas que necesitas ${menu.nomCategoria.toLowerCase()}?',
+      primaryButtonText: 'ENVIAR ALERTA',
+      secondaryButtonText: 'Cancelar',
+      color: const Color(0xFFC22725), // Rojo emergencia
+      icon: Icons.warning,
     );
 
     if (shouldSend == true) {
@@ -207,10 +188,10 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
 
   Future<void> _sendEmergencyAlert(MenuCategory menu) async {
     // Mostrar loading
-    showDialog(
+    CustomDialog.showLoading(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      title: 'Enviando Alerta',
+      message: 'Procesando tu solicitud de emergencia...',
     );
 
     try {
@@ -353,24 +334,14 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
 
   void _handlePanicButton(BuildContext context) async {
     // Mostrar confirmación
-    final shouldSend = await showDialog<bool>(
+    final shouldSend = await CustomDialog.showConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('⚠️ BOTÓN DE PÁNICO'),
-        content: const Text('¿Confirmas que necesitas ayuda de emergencia?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('ENVIAR ALERTA',
-                style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+      title: 'BOTÓN DE PÁNICO',
+      message: '¿Confirmas que necesitas ayuda de emergencia?',
+      primaryButtonText: 'ENVIAR ALERTA',
+      secondaryButtonText: 'Cancelar',
+      color: const Color(0xFFFFD700), // Amarillo del botón de pánico
+      icon: Icons.warning,
     );
 
     if (shouldSend == true) {
@@ -417,23 +388,33 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
-          // Guardar la referencia del setState del diálogo
           dialogSetState = setState;
-
-          return AlertDialog(
-            title: const Text('⏳ Esperando respuesta'),
-            content: Column(
+          return CustomDialog(
+            type: DialogType.loading,
+            title: 'Esperando Respuesta',
+            customContent: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(),
+                const CircularProgressIndicator(
+                  color: Color(0xFF1976D2),
+                ),
                 const SizedBox(height: 16),
                 const Text(
-                    'Estamos a la espera de una respuesta del personal de seguridad.'),
+                  'Estamos a la espera de una respuesta del personal de seguridad.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Color(0xFF333333)),
+                ),
                 const SizedBox(height: 8),
-                Text('Tiempo restante: $_remainingSeconds segundos',
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  'Tiempo restante: $_remainingSeconds segundos',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1976D2),
+                  ),
+                ),
               ],
             ),
+            barrierDismissible: false,
           );
         },
       ),
@@ -500,58 +481,34 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
   }
 
   void _showSuccessAlert() {
-    showDialog(
+    CustomDialog.showSuccess(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('✔️ Alerta recibida'),
-        content:
-            const Text('Tu alerta fue aceptada. Recibirás atención en breve.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      title: 'Alerta Recibida',
+      message: 'Tu alerta fue aceptada. Recibirás atención en breve.',
     );
   }
 
   void _showTimeoutAlert() {
-    showDialog(
+    CustomDialog.showWarning(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('⚠️ Tiempo agotado'),
-        content: const Text('Ningún agente respondió a tiempo.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      title: 'Tiempo Agotado',
+      message: 'Ningún agente respondió a tiempo.',
     );
   }
 
   void _showNoResponseAlert() {
-    showDialog(
+    CustomDialog.showWarning(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('⚠️ Alerta no respondida'),
-        content: const Text('Ningún agente respondió a tu alerta.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
+      title: 'Alerta No Respondida',
+      message: 'Ningún agente respondió a tu alerta.',
     );
   }
 
+  // Método modificado para 3 elementos por fila en emergencias
   List<Widget> _buildDynamicRows() {
     List<Widget> rows = [];
 
-    for (int i = 0; i < emergenciaMenus.length; i += 2) {
+    for (int i = 0; i < emergenciaMenus.length; i += 3) {
       List<Widget> rowChildren = [];
 
       // Primer elemento de la fila
@@ -568,7 +525,7 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
         ),
       );
 
-      rowChildren.add(const SizedBox(width: 16));
+      rowChildren.add(const SizedBox(width: 12));
 
       // Segundo elemento de la fila (si existe)
       if (i + 1 < emergenciaMenus.length) {
@@ -588,10 +545,30 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
         rowChildren.add(Expanded(child: Container()));
       }
 
+      rowChildren.add(const SizedBox(width: 12));
+
+      // Tercer elemento de la fila (si existe)
+      if (i + 2 < emergenciaMenus.length) {
+        rowChildren.add(
+          Expanded(
+            child: _buildCard(
+              iconUrl:
+                  MenuService.getIconUrl(emergenciaMenus[i + 2].iconoCategoria),
+              text: emergenciaMenus[i + 2].nomCategoria,
+              color: _getColorForCategory(emergenciaMenus[i + 2].nomCategoria),
+              onTap: () => _handleEmergencyAlert(emergenciaMenus[i + 2]),
+            ),
+          ),
+        );
+      } else {
+        // Espacio vacío si no hay tercer elemento
+        rowChildren.add(Expanded(child: Container()));
+      }
+
       rows.add(Row(children: rowChildren));
 
       // Agregar espaciado entre filas (excepto después de la última)
-      if (i + 2 < emergenciaMenus.length) {
+      if (i + 3 < emergenciaMenus.length) {
         rows.add(const SizedBox(height: 16));
       }
     }
@@ -615,39 +592,53 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        height: 140,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black,
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Card principal
+          Container(
+            height: 120, // Para emergencias (3 por fila)
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Imagen desde URL
-            Image.network(
-              iconUrl,
-              height: 140,
-              width: 140,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                // Fallback a icono por defecto si la imagen no carga
-                return Icon(
-                  _getDefaultIcon(),
-                  size: 70,
-                  color: Colors.white,
-                );
-              },
+            child: Center(
+              child: Image.network(
+                iconUrl,
+                height: 100,
+                width: 100,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    _getDefaultIcon(),
+                    size: 50,
+                    color: Colors.white,
+                  );
+                },
+              ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          // Texto debajo de la card
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF333333),
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }
@@ -715,7 +706,7 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-            // Construir filas dinámicamente
+            // Construir filas dinámicamente con 4 elementos por fila
             ..._buildDynamicRows(),
           ],
         ),
@@ -723,10 +714,11 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
     );
   }
 
+  // Método modificado para 4 elementos por fila en incidencias
   List<Widget> _buildDynamicRows() {
     List<Widget> rows = [];
 
-    for (int i = 0; i < incidenciaMenus.length; i += 2) {
+    for (int i = 0; i < incidenciaMenus.length; i += 4) {
       List<Widget> rowChildren = [];
 
       // Primer elemento de la fila
@@ -751,7 +743,7 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
         ),
       );
 
-      rowChildren.add(const SizedBox(width: 16));
+      rowChildren.add(const SizedBox(width: 8));
 
       // Segundo elemento de la fila (si existe)
       if (i + 1 < incidenciaMenus.length) {
@@ -795,10 +787,98 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
         rowChildren.add(Expanded(child: Container()));
       }
 
+      rowChildren.add(const SizedBox(width: 8));
+
+      // Tercer elemento de la fila (si existe)
+      if (i + 2 < incidenciaMenus.length) {
+        rowChildren.add(
+          Expanded(
+            child: _buildCard(
+              iconUrl:
+                  MenuService.getIconUrl(incidenciaMenus[i + 2].iconoCategoria),
+              text: incidenciaMenus[i + 2].nomCategoria,
+              color: _getColorForCategory(incidenciaMenus[i + 2].nomCategoria),
+              onTap: () {
+                if (incidenciaMenus[i + 2]
+                    .nomCategoria
+                    .toLowerCase()
+                    .contains('alerta')) {
+                  // Acción para alerta rápida
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text(
+                            '${incidenciaMenus[i + 2].nomCategoria} activada')),
+                  );
+                } else {
+                  // Navegar al formulario
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => IncidenciaFormScreen(
+                        tipo: incidenciaMenus[i + 2].nomCategoria,
+                        idCategoria:
+                            incidenciaMenus[i + 2].idCategoria.toString(),
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
+        );
+      } else {
+        // Espacio vacío si no hay tercer elemento
+        rowChildren.add(Expanded(child: Container()));
+      }
+
+      rowChildren.add(const SizedBox(width: 8));
+
+      // Cuarto elemento de la fila (si existe)
+      if (i + 3 < incidenciaMenus.length) {
+        rowChildren.add(
+          Expanded(
+            child: _buildCard(
+              iconUrl:
+                  MenuService.getIconUrl(incidenciaMenus[i + 3].iconoCategoria),
+              text: incidenciaMenus[i + 3].nomCategoria,
+              color: _getColorForCategory(incidenciaMenus[i + 3].nomCategoria),
+              onTap: () {
+                if (incidenciaMenus[i + 3]
+                    .nomCategoria
+                    .toLowerCase()
+                    .contains('alerta')) {
+                  // Acción para alerta rápida
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                        content: Text(
+                            '${incidenciaMenus[i + 3].nomCategoria} activada')),
+                  );
+                } else {
+                  // Navegar al formulario
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => IncidenciaFormScreen(
+                        tipo: incidenciaMenus[i + 3].nomCategoria,
+                        idCategoria:
+                            incidenciaMenus[i + 3].idCategoria.toString(),
+                      ),
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
+        );
+      } else {
+        // Espacio vacío si no hay cuarto elemento
+        rowChildren.add(Expanded(child: Container()));
+      }
+
       rows.add(Row(children: rowChildren));
 
       // Agregar espaciado entre filas (excepto después de la última)
-      if (i + 2 < incidenciaMenus.length) {
+      if (i + 4 < incidenciaMenus.length) {
         rows.add(const SizedBox(height: 16));
       }
     }
@@ -831,39 +911,53 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        height: 140,
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black,
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Card principal
+          Container(
+            height: 100, // Para incidencias (4 por fila)
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Imagen desde URL
-            Image.network(
-              iconUrl,
-              height: 140,
-              width: 140,
-              fit: BoxFit.contain,
-              errorBuilder: (context, error, stackTrace) {
-                // Fallback a icono por defecto si la imagen no carga
-                return Icon(
-                  _getDefaultIcon(),
-                  size: 70,
-                  color: Colors.white,
-                );
-              },
+            child: Center(
+              child: Image.network(
+                iconUrl,
+                height: 70,
+                width: 70,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return Icon(
+                    _getDefaultIcon(),
+                    size: 35,
+                    color: Colors.white,
+                  );
+                },
+              ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 8),
+          // Texto debajo de la card
+          Text(
+            text,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF333333),
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously
 
+import 'package:boton_panico_app/core/widgets/custom_dialog_widget.dart';
 import 'package:boton_panico_app/service/optimizar_imagen_service.dart';
 import 'package:flutter/material.dart';
 import 'dart:io';
@@ -111,27 +112,10 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
   }
 
   void _showAutoSendingDialog() {
-    showDialog(
+    CustomDialog.showLoading(
       context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(
-                color: Color(0xFF1976D2),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Tomando foto y enviando alerta automáticamente...',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 16),
-              ),
-            ],
-          ),
-        );
-      },
+      title: 'Procesando Alerta',
+      message: 'Tomando foto y enviando alerta automáticamente...',
     );
   }
 
@@ -409,7 +393,8 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
         ResponsiveHelper.getSliverAppBarHeight(context),
       ),
       child: AppBar(
-        backgroundColor: const Color.fromARGB(255, 2, 14, 179),
+        //colores
+        backgroundColor: const Color(0xFF099AD7),
         elevation: ResponsiveHelper.getElevation(context, base: 0),
         leading: IconButton(
           icon: Icon(
@@ -458,7 +443,8 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      color: const Color.fromARGB(255, 2, 14, 179),
+      //colores
+      color: const Color(0xFF099AD7),
       child: Column(
         children: [
           SizedBox(height: ResponsiveHelper.getSpacing(context, base: 20)),
@@ -582,14 +568,14 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
         onPressed: isFormValid ? _enviarAlerta : null,
         style: ElevatedButton.styleFrom(
           backgroundColor:
-              isFormValid ? const Color(0xFF1976D2) : Colors.grey.shade400,
+              isFormValid ? const Color(0xFF099AD7) : const Color(0xFFAFB5B3),
           foregroundColor: Colors.white,
           elevation:
               isFormValid ? ResponsiveHelper.getElevation(context, base: 4) : 0,
           shape: RoundedRectangleBorder(
             borderRadius: ResponsiveHelper.getImageBorderRadius(context),
           ),
-          shadowColor: const Color(0xFF1976D2),
+          shadowColor: const Color(0xFF099AD7),
         ),
         child: _isLoading
             ? SizedBox(

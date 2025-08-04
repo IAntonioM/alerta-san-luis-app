@@ -134,17 +134,17 @@ class _CamaraWidgetState extends State<CamaraWidget> {
                   : Colors.grey.shade50,
               border: Border.all(
                 color: widget.imagenSeleccionada != null
-                    ? const Color(0xFF1976D2)
+                    ? const Color(0xFF099AD7)
                     : (widget.isAutoMode
-                        ? Colors.grey.shade400
-                        : Colors.grey.shade300),
+                        ? const Color(0xFFAFB5B3)
+                        : const Color(0xFFAFB5B3)),
                 width: widget.imagenSeleccionada != null ? 2.0 : 1.5,
               ),
               borderRadius: ResponsiveHelper.getImageBorderRadius(context),
               boxShadow: widget.imagenSeleccionada != null
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF1976D2),
+                        color: Color(0xFF099AD7),
                         blurRadius:
                             ResponsiveHelper.getElevation(context, base: 8),
                         offset: const Offset(0, 2),
@@ -172,13 +172,13 @@ class _CamaraWidgetState extends State<CamaraWidget> {
               ResponsiveHelper.getSpacing(context, base: 16),
             ),
             decoration: BoxDecoration(
-              color: Colors.grey.shade300,
+              color: Color(0xFFAFB5B3),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.camera_alt,
               size: ResponsiveHelper.getIconSize(context, base: 32),
-              color: Colors.grey.shade600,
+              color: Color(0xFF4C4547),
             ),
           ),
           SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
@@ -212,7 +212,7 @@ class _CamaraWidgetState extends State<CamaraWidget> {
             ResponsiveHelper.getSpacing(context, base: 16),
           ),
           decoration: BoxDecoration(
-            color: const Color(0xFF1976D2),
+            color: const Color(0xFF099AD7),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -297,7 +297,7 @@ class _CamaraWidgetState extends State<CamaraWidget> {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50),
+                color: const Color(0xFF56A049),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(

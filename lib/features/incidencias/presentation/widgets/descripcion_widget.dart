@@ -30,7 +30,7 @@ class DescripcionWidget extends StatelessWidget {
           style: TextStyle(
             fontSize: ResponsiveHelper.getTitleFontSize(context, base: 18),
             fontWeight: FontWeight.w500,
-            color: const Color(0xFF333333),
+            color: const Color(0xFF4C4547),
           ),
         ),
         SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
@@ -40,9 +40,9 @@ class DescripcionWidget extends StatelessWidget {
             color: Colors.grey.shade50,
             borderRadius: ResponsiveHelper.getImageBorderRadius(context),
             border: Border.all(
-              color: controller.text.isNotEmpty 
-                  ? const Color(0xFF1976D2) 
-                  : Colors.grey.shade300,
+              color: controller.text.isNotEmpty
+                  ? const Color(0xFF099AD7)
+                  : const Color(0xFFAFB5B3),
               width: controller.text.isNotEmpty ? 2.0 : 1.5,
             ),
           ),
@@ -53,17 +53,19 @@ class DescripcionWidget extends StatelessWidget {
             textAlignVertical: TextAlignVertical.top,
             style: TextStyle(
               fontSize: ResponsiveHelper.getBodyFontSize(context),
-              color: const Color(0xFF333333),
+              color: const Color(0xFF4C4547),
               height: 1.4,
             ),
             decoration: InputDecoration(
-              hintText: hintText ?? ResponsiveHelper.responsiveValue(
-                context,
-                mobile: 'Describe la situación...',
-                desktop: 'Describe detalladamente la situación reportada...',
-              ),
+              hintText: hintText ??
+                  ResponsiveHelper.responsiveValue(
+                    context,
+                    mobile: 'Describe la situación...',
+                    desktop:
+                        'Describe detalladamente la situación reportada...',
+                  ),
               hintStyle: TextStyle(
-                color: const Color(0xFF999999),
+                color: const Color(0xFFAFB5B3),
                 fontSize: ResponsiveHelper.getBodyFontSize(context),
               ),
               border: InputBorder.none,
