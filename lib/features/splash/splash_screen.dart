@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../../../utils/responsive_helper.dart'; // Asegúrate de importar tu ResponsiveHelper
+import '../../utils/responsive_helper.dart'; // Asegúrate de importar tu ResponsiveHelper
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -92,8 +92,8 @@ class _SplashScreenState extends State<SplashScreen>
                       style: TextStyle(
                         fontSize: ResponsiveHelper.getTitleFontSize(context,
                             base: 20),
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
                       ),
                     ),
 

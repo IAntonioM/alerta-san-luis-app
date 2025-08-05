@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../../utils/responsive_helper.dart';
+import '../../../utils/responsive_helper.dart';
 
 class DescripcionWidget extends StatelessWidget {
   final TextEditingController controller;

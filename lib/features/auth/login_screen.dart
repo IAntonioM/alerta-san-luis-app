@@ -2,8 +2,8 @@
 
 import 'package:boton_panico_app/service/user_storage_service.dart';
 import 'package:flutter/material.dart';
-import '../../../utils/responsive_helper.dart';
-import '../../../service/auth_service.dart';
+import '../../utils/responsive_helper.dart';
+import '../../service/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -322,7 +322,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Bottom spacing
                 SizedBox(
-                    height: ResponsiveHelper.getSpacing(context, base: 32)),
+                    height: ResponsiveHelper.getSpacing(context, base: 60)),
               ],
             ),
           ),

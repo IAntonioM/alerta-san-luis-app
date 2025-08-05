@@ -10,7 +10,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
+
+  cached_network_image: ^3.3.1
   cupertino_icons: ^1.0.8
   flutter_lints: ^5.0.0
   flutter_rating_bar: ^4.0.0

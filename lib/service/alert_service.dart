@@ -63,8 +63,8 @@ class AlertService {
           await ErrorModalService.showSuccessModal(
             context,
             title: 'Alerta enviada',
-            message: responseData['MENSAJE'] ??
-                'La alerta se envió correctamente',
+            message:
+                responseData['MENSAJE'] ?? 'La alerta se envió correctamente',
           );
           return ApiResponse.success(responseData['MENSAJE']);
         } else {
@@ -76,12 +76,12 @@ class AlertService {
           return ApiResponse.error('Error al enviar la alerta');
         }
       } else {
-        await ErrorModalService.showErrorModal(
+        await ErrorModalService.showApiErrorModal(
           context,
+          response,
           title: 'Error del Servidor',
-          message:
-              'No se pudo conectar con el servidor. Código: ${response.statusCode} - Mensaje: ${response.body}',
-        );        
+          defaultMessage: 'No se pudo conectar con el servidor',
+        );
         return ApiResponse.error('Error en el servidor');
       }
     } catch (e) {
@@ -90,7 +90,7 @@ class AlertService {
         title: 'Error de Conexión',
         message:
             'No se pudo establecer conexión con el servidor. Verifica tu conexión a internet.',
-      );      
+      );
       await AuthService.logout(context);
       return ApiResponse.error('Error de conexión: $e');
     }

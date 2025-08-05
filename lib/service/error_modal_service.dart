@@ -1,7 +1,8 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:convert';
 import 'package:flutter/material.dart';
-
+import 'package:http/http.dart' as http;
 class ErrorModalService {
   // Mostrar modal de error
   static Future<void> showErrorModal(
@@ -52,7 +53,8 @@ class ErrorModalService {
               style: TextButton.styleFrom(
                 backgroundColor: Colors.red[700],
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -62,6 +64,36 @@ class ErrorModalService {
           ],
         );
       },
+    );
+  }
+
+  // Mostrar modal de error parseando automáticamente la respuesta de la API
+  static Future<void> showApiErrorModal(
+    BuildContext context,
+    http.Response response, {
+    required String title,
+    String defaultMessage = 'Ha ocurrido un error',
+    String buttonText = 'Aceptar',
+    VoidCallback? onPressed,
+  }) async {
+    String errorMessage = '$defaultMessage. Código: ${response.statusCode}';
+
+    try {
+      final errorData = jsonDecode(response.body);
+      if (errorData is Map<String, dynamic> && errorData['message'] != null) {
+        errorMessage = errorData['message'];
+      }
+    } catch (parseError) {
+      print('Error al parsear respuesta de error: $parseError');
+      // Si no se puede parsear, usar el mensaje por defecto
+    }
+
+    return showErrorModal(
+      context,
+      title: title,
+      message: errorMessage,
+      buttonText: buttonText,
+      onPressed: onPressed,
     );
   }
 
@@ -114,7 +146,8 @@ class ErrorModalService {
               style: TextButton.styleFrom(
                 backgroundColor: Colors.green[700],
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -136,69 +169,73 @@ class ErrorModalService {
     String cancelText = 'Cancelar',
   }) async {
     return await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Icon(
-                Icons.help_outline,
-                color: Colors.orange[700],
-                size: 28,
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+              title: Row(
+                children: [
+                  Icon(
+                    Icons.help_outline,
                     color: Colors.orange[700],
+                    size: 28,
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange[700],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              content: Text(
+                message,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
                 ),
               ),
-            ],
-          ),
-          content: Text(
-            message,
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey[600],
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-              child: Text(cancelText),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.orange[700],
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.grey[600],
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                  ),
+                  child: Text(cancelText),
                 ),
-              ),
-              child: Text(confirmText),
-            ),
-          ],
-        );
-      },
-    ) ?? false;
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.orange[700],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(confirmText),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
   }
 
   // Mostrar modal de carga
-  static void showLoadingModal(BuildContext context, {String message = 'Cargando...'}) {
+  static void showLoadingModal(BuildContext context,
+      {String message = 'Cargando...'}) {
     showDialog(
       context: context,
       barrierDismissible: false,

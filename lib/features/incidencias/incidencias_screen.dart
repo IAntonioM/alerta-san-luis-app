@@ -7,9 +7,9 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../service/alert_service.dart';
-import '../../../utils/responsive_helper.dart';
-import '../../../service/user_storage_service.dart';
+import '../../service/alert_service.dart';
+import '../../utils/responsive_helper.dart';
+import '../../service/user_storage_service.dart';
 
 // Importar los widgets modulares
 import 'widgets/camara_widget.dart';

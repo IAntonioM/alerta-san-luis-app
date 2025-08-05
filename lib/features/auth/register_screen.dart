@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../utils/responsive_helper.dart';
-import '../../../service/auth_service.dart';
+import '../../utils/responsive_helper.dart';
+import '../../service/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -295,9 +295,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Form(
                   key: _formKey,
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(
-                      vertical: ResponsiveHelper.getVerticalPadding(context),
-                    ),
                     child: Column(
                       children: [
                         // Campos del formulario
@@ -338,56 +335,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        vertical: ResponsiveHelper.getSpacing(context, base: 20),
-      ),
-      child: Column(
-        children: [
-          // Fila con botón de retroceso y logo
-          Row(
-            children: [
-              IconButton(
-                onPressed: () => Navigator.pop(context),
-                icon: Icon(
-                  Icons.arrow_back,
-                  color: Colors.white,
-                  size: ResponsiveHelper.getIconSize(context),
-                ),
+    return Column(
+      children: [
+        // Fila con botón de retroceso y logo
+        Row(
+          children: [
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: Icon(
+                Icons.arrow_back,
+                color: Colors.white,
+                size: ResponsiveHelper.getIconSize(context),
               ),
-              Expanded(
-                child: Center(
-                  child: Image.asset(
-                    'assets/imgs/logo.png',
-                    height: ResponsiveHelper.getResponsiveHeight(context, 80),
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              ),
-              SizedBox(
-                  width: ResponsiveHelper.getIconSize(context) + 16), // Balance
-            ],
-          ),
-
-          SizedBox(height: ResponsiveHelper.getSpacing(context, base: 20)),
-
-          // Título
-          Text(
-            'Registro',
-            style: TextStyle(
-              fontSize: ResponsiveHelper.getTitleFontSize(context, base: 28),
-              fontWeight: FontWeight.w300,
-              color: Colors.white,
-              letterSpacing: 0.5,
             ),
+            Expanded(
+              child: Center(
+                child: Image.asset(
+                  'assets/imgs/logo.png',
+                  height: ResponsiveHelper.getResponsiveHeight(context, 100),
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            SizedBox(
+                width: ResponsiveHelper.getIconSize(context) + 16), // Balance
+          ],
+        ),
+    
+        SizedBox(height: ResponsiveHelper.getSpacing(context, base: 8)),
+    
+        // Título
+        Text(
+          'Registro',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getTitleFontSize(context, base: 28),
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            letterSpacing: 0.5,
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   Widget _buildTermsCheckbox() {
-    return CheckboxListTile(
+  return Container(
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.2), 
+      borderRadius: BorderRadius.circular(8), 
+    ),
+    padding: const EdgeInsets.symmetric(horizontal: 8), 
+    child: CheckboxListTile(
       value: _acceptedTerms,
       onChanged: (value) {
         setState(() => _acceptedTerms = value ?? false);
@@ -403,8 +401,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       activeColor: const Color(0xFF1976D2),
       contentPadding: EdgeInsets.zero,
       controlAffinity: ListTileControlAffinity.leading,
-    );
-  }
+    ),
+  );
+}
+
 
   Widget _buildRegisterButton() {
     return SizedBox(

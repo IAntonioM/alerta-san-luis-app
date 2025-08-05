@@ -41,53 +41,52 @@ class CustomDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
       ),
-      backgroundColor: Colors.white,
-      elevation: 8,
+      backgroundColor: const Color.fromRGBO(255, 255, 255, 1), // Blanco
+      elevation: 4,
       contentPadding: const EdgeInsets.all(0),
       content: Container(
+        constraints: const BoxConstraints(maxWidth: 340),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              _getDialogColor(),
-              Colors.white,
-            ],
+          borderRadius: BorderRadius.circular(12),
+          color: const Color.fromRGBO(255, 255, 255, 1), // Blanco
+          border: Border.all(
+            color: const Color.fromRGBO(175, 181, 179, 0.3), // Gris claro con opacidad
+            width: 1,
           ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header con color y icono
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
-              decoration: BoxDecoration(
-                color: _getDialogColor(),
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-              ),
-              child: Column(
+            // Header minimalista
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
+              child: Row(
                 children: [
-                  Icon(
-                    _getDialogIcon(),
-                    size: 48,
-                    color: Colors.white,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: _getDialogColor(),
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    textAlign: TextAlign.center,
+                    child: Icon(
+                      _getDialogIcon(),
+                      size: 20,
+                      color: _getDialogColor(),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: const Color.fromRGBO(76, 69, 71, 1), // Gris oscuro
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -95,25 +94,33 @@ class CustomDialog extends StatelessWidget {
             
             // Contenido
             Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
               child: customContent ?? 
                 (message != null 
                   ? Text(
                       message!,
                       style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF333333),
-                        height: 1.4,
+                        fontSize: 15,
+                        color: Color.fromRGBO(76, 69, 71, 0.8), // Gris oscuro con opacidad
+                        height: 1.5,
                       ),
-                      textAlign: TextAlign.center,
+                      textAlign: TextAlign.left,
                     )
                   : const SizedBox.shrink()),
             ),
             
             // Botones (si no es loading)
             if (type != DialogType.loading)
-              Padding(
-                padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(
+                      color: const Color.fromRGBO(175, 181, 179, 0.2),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                padding: const EdgeInsets.all(16),
                 child: _buildButtons(context),
               ),
           ],
@@ -126,45 +133,42 @@ class CustomDialog extends StatelessWidget {
     if (secondaryButtonText != null) {
       // Dos botones
       return Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Expanded(
-            child: OutlinedButton(
-              onPressed: onSecondaryPressed ?? () => Navigator.pop(context),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: _getDialogColor()),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
+          TextButton(
+            onPressed: onSecondaryPressed ?? () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              foregroundColor: const Color.fromRGBO(175, 181, 179, 1), // Gris
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
               ),
-              child: Text(
-                secondaryButtonText!,
-                style: TextStyle(
-                  color: _getDialogColor(),
-                  fontWeight: FontWeight.w500,
-                ),
+            ),
+            child: Text(
+              secondaryButtonText!,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: ElevatedButton(
-              onPressed: onPrimaryPressed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _getDialogColor(),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                elevation: 2,
+          const SizedBox(width: 8),
+          ElevatedButton(
+            onPressed: onPrimaryPressed,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _getDialogColor(),
+              foregroundColor: const Color.fromRGBO(255, 255, 255, 1), // Blanco
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
               ),
-              child: Text(
-                primaryButtonText ?? 'OK',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            ),
+            child: Text(
+              primaryButtonText ?? 'OK',
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
               ),
             ),
           ),
@@ -172,27 +176,29 @@ class CustomDialog extends StatelessWidget {
       );
     } else {
       // Un solo botón
-      return SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: onPrimaryPressed ?? () => Navigator.pop(context),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _getDialogColor(),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          ElevatedButton(
+            onPressed: onPrimaryPressed ?? () => Navigator.pop(context),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _getDialogColor(),
+              foregroundColor: const Color.fromRGBO(255, 255, 255, 1), // Blanco
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            elevation: 2,
-          ),
-          child: Text(
-            primaryButtonText ?? 'OK',
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
+            child: Text(
+              primaryButtonText ?? 'OK',
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+              ),
             ),
           ),
-        ),
+        ],
       );
     }
   }
@@ -202,17 +208,17 @@ class CustomDialog extends StatelessWidget {
     
     switch (type) {
       case DialogType.confirmation:
-        return const Color(0xFF1976D2); // Azul principal
+        return const Color.fromRGBO(9, 154, 215, 1); // Azul
       case DialogType.loading:
-        return const Color(0xFF1976D2); // Azul principal
+        return const Color.fromRGBO(9, 154, 215, 1); // Azul
       case DialogType.success:
-        return const Color(0xFF4CAF50); // Verde
+        return const Color.fromRGBO(86, 160, 73, 1); // Verde
       case DialogType.error:
-        return const Color(0xFFC22725); // Rojo
+        return const Color.fromRGBO(205, 32, 54, 1); // Rojo
       case DialogType.warning:
-        return const Color(0xFFFF9800); // Naranja
+        return const Color.fromRGBO(188, 150, 111, 1); // Marrón/Naranja
       case DialogType.info:
-        return const Color(0xFF0C9BD7); // Azul claro
+        return const Color.fromRGBO(9, 154, 215, 1); // Azul
     }
   }
 
@@ -221,17 +227,17 @@ class CustomDialog extends StatelessWidget {
     
     switch (type) {
       case DialogType.confirmation:
-        return Icons.help_outline;
+        return Icons.help_outline_rounded;
       case DialogType.loading:
-        return Icons.hourglass_empty;
+        return Icons.access_time_rounded;
       case DialogType.success:
-        return Icons.check_circle_outline;
+        return Icons.check_circle_outline_rounded;
       case DialogType.error:
-        return Icons.error_outline;
+        return Icons.error_outline_rounded;
       case DialogType.warning:
-        return Icons.warning_outlined;
+        return Icons.warning_amber_rounded;
       case DialogType.info:
-        return Icons.info_outline;
+        return Icons.info_outline_rounded;
     }
   }
 
@@ -275,16 +281,21 @@ class CustomDialog extends StatelessWidget {
         customContent: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const CircularProgressIndicator(
-              color: Color(0xFF1976D2),
+            SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                color: const Color.fromRGBO(9, 154, 215, 1), // Azul
+                strokeWidth: 2.5,
+              ),
             ),
             if (message != null) ...[
               const SizedBox(height: 16),
               Text(
                 message,
                 style: const TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF333333),
+                  fontSize: 15,
+                  color: Color.fromRGBO(76, 69, 71, 0.8),
                 ),
                 textAlign: TextAlign.center,
               ),

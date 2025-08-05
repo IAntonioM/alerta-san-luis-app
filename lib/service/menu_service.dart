@@ -12,7 +12,8 @@ class MenuService {
   // Cache estático para los menús
   static List<MenuCategory>? _cachedMenus;
   static DateTime? _cacheTimestamp;
-  static const Duration _cacheExpiration = Duration(minutes: 30); // Configurable
+  static const Duration _cacheExpiration =
+      Duration(minutes: 30); // Configurable
 
   // Método para verificar si el cache es válido
   static bool _isCacheValid() {
@@ -40,8 +41,10 @@ class MenuService {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
-        final filteredData = data.where((json) => json['id_categoria'] != 22).toList();
-        final menus = filteredData.map((json) => MenuCategory.fromJson(json)).toList();
+        final filteredData =
+            data.where((json) => json['id_categoria'] != 22).toList();
+        final menus =
+            filteredData.map((json) => MenuCategory.fromJson(json)).toList();
 
         // Guardar en cache
         _cachedMenus = menus;
@@ -51,11 +54,12 @@ class MenuService {
 
         return ApiResponse.success(menus);
       } else {
-        await ErrorModalService.showErrorModal(
+        await ErrorModalService.showApiErrorModal(
           context,
+          response,
           title: 'Error en la obtención de data',
-          message: 'Error al obtener los menus.',
-        );        
+          defaultMessage: 'Error al obtener los menús',
+        );
         await AuthService.logout(context);
         return ApiResponse.error('Error al obtener menús');
       }
@@ -64,7 +68,8 @@ class MenuService {
       await ErrorModalService.showErrorModal(
         context,
         title: 'Error de Conexión',
-        message: 'No se pudo conectar con el servidor. Verifica tu conexión a internet.',
+        message:
+            'No se pudo conectar con el servidor. Verifica tu conexión a internet.',
       );
       await AuthService.logout(context);
       return ApiResponse.error('Error de conexión: $e');

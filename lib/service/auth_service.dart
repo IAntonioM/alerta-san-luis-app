@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print, use_build_context_synchronously
 
 import 'dart:convert';
-import 'package:boton_panico_app/features/splash/presentation/splash_screen.dart';
+import 'package:boton_panico_app/features/splash/splash_screen.dart';
 import 'package:boton_panico_app/service/user_storage_service.dart';
 import 'package:flutter/material.dart';
 import '../models/ciudadano_model.dart';
@@ -79,12 +79,12 @@ class AuthService {
           return ApiResponse.error(data['message'] ?? 'Error en el registro');
         }
       } else {
-        // Mostrar modal de error del servidor
-        await ErrorModalService.showErrorModal(
+        // Mostrar modal de error del servidor usando el nuevo método
+        await ErrorModalService.showApiErrorModal(
           context,
+          response,
           title: 'Error del Servidor',
-          message:
-              'No se pudo completar el registro. Código: ${response.statusCode}',
+          defaultMessage: 'No se pudo completar el registro',
         );
         return ApiResponse.error('Error del servidor: ${response.statusCode}');
       }
@@ -161,10 +161,17 @@ class AuthService {
               data['message'] ?? 'Credenciales incorrectas');
         }
       } else {
-        // Parsear la respuesta para obtener el mensaje de error de la API
+        // Mostrar modal de error del servidor usando el nuevo método
+        await ErrorModalService.showApiErrorModal(
+          context,
+          response,
+          title: 'No se pudo iniciar sesión',
+          defaultMessage: 'No se pudo iniciar sesión',
+        );
+
+        // Para obtener el mensaje parseado para el return
         String errorMessage =
             'No se pudo iniciar sesión. Código: ${response.statusCode}';
-
         try {
           final errorData = jsonDecode(response.body);
           if (errorData is Map<String, dynamic> &&
@@ -172,16 +179,9 @@ class AuthService {
             errorMessage = errorData['message'];
           }
         } catch (parseError) {
-          print('Error al parsear respuesta de error: $parseError');
-          // Si no se puede parsear, usar el mensaje por defecto
+          // Usar mensaje por defecto
         }
 
-        // Mostrar modal de error del servidor
-        await ErrorModalService.showErrorModal(
-          context,
-          title: 'No se pudo iniciar sesión',
-          message: errorMessage,
-        );
         return ApiResponse.error('Error en el login: $errorMessage');
       }
     } catch (e) {

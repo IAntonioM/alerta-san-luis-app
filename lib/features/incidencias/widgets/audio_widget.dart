@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart'; // Importar permission_handler
-import '../../../../utils/responsive_helper.dart';
+import '../../../utils/responsive_helper.dart';
 
 enum AudioState { idle, recording, paused, recorded, playing }
 
