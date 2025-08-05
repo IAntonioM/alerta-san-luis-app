@@ -1,19 +1,19 @@
-import 'package:boton_panico_app/service/optimizar_imagen_service.dart';
-import 'package:boton_panico_app/utils/responsive_helper.dart';
-import 'package:flutter/material.dart';
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../service/optimizar_imagen_service.dart';
+import '../../../utils/responsive_helper.dart';
 
 class CamaraWidget extends StatefulWidget {
   final File? imagenSeleccionada;
   final Function(File?) onImageSelected;
-  final bool isAutoMode; // Nueva propiedad para identificar modo automático
+  final bool isAutoMode;
 
   const CamaraWidget({
     super.key,
     required this.imagenSeleccionada,
     required this.onImageSelected,
-    this.isAutoMode = false, // Por defecto false
+    this.isAutoMode = false,
   });
 
   @override
@@ -34,7 +34,7 @@ class _CamaraWidgetState extends State<CamaraWidget> {
         // Optimizar la imagen antes de asignarla
         final imageFile = File(imagen.path);
         final optimizedImage =
-            await ImageOptimizationService.optimizeImage(imageFile);
+        await ImageOptimizationService.optimizeImage(imageFile);
         widget.onImageSelected(optimizedImage);
       }
       return;
@@ -45,18 +45,45 @@ class _CamaraWidgetState extends State<CamaraWidget> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Seleccionar imagen'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getBorderRadius(context, base: 12),
+            ),
+          ),
+          title: Text(
+            'Seleccionar imagen',
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getFontSize(context, 18),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Cámara'),
+                leading: Icon(
+                  Icons.camera_alt,
+                  size: ResponsiveHelper.getIconSize(context, base: 24),
+                ),
+                title: Text(
+                  'Cámara',
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getFontSize(context, 16),
+                  ),
+                ),
                 onTap: () => Navigator.of(context).pop(ImageSource.camera),
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Galería'),
+                leading: Icon(
+                  Icons.photo_library,
+                  size: ResponsiveHelper.getIconSize(context, base: 24),
+                ),
+                title: Text(
+                  'Galería',
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getFontSize(context, 16),
+                  ),
+                ),
                 onTap: () => Navigator.of(context).pop(ImageSource.gallery),
               ),
             ],
@@ -78,10 +105,8 @@ class _CamaraWidgetState extends State<CamaraWidget> {
     final imageHeight = ResponsiveHelper.responsiveValue(
       context,
       mobile: 180.0,
-      smallTablet: 200.0,
-      largeTablet: 220.0,
+      tablet: 220.0,
       desktop: 250.0,
-      largeDesktop: 280.0,
     );
 
     return Column(
@@ -92,24 +117,29 @@ class _CamaraWidgetState extends State<CamaraWidget> {
             Text(
               'Evidencia',
               style: TextStyle(
-                fontSize: ResponsiveHelper.getTitleFontSize(context, base: 18),
+                fontSize: ResponsiveHelper.getFontSize(context, 18),
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF333333),
               ),
             ),
             // Mostrar indicador de modo automático si aplica
             if (widget.isAutoMode && widget.imagenSeleccionada != null) ...[
-              SizedBox(width: 8),
+              SizedBox(width: ResponsiveHelper.getSpacing(context, base: 8)),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(
+                  horizontal: ResponsiveHelper.getSpacing(context, base: 8),
+                  vertical: ResponsiveHelper.getSpacing(context, base: 4),
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF4CAF50),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(
+                    ResponsiveHelper.getBorderRadius(context, base: 12),
+                  ),
                 ),
                 child: Text(
                   'AUTO',
                   style: TextStyle(
-                    fontSize: 10,
+                    fontSize: ResponsiveHelper.getFontSize(context, 10),
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -118,14 +148,12 @@ class _CamaraWidgetState extends State<CamaraWidget> {
             ],
           ],
         ),
-        SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
+        SizedBox(height: ResponsiveHelper.getSpacing(context, base: 12)),
         GestureDetector(
-          onTap: widget.isAutoMode
-              ? null
-              : _seleccionarImagen, // Deshabilitar tap en modo auto
+          onTap: widget.isAutoMode ? null : _seleccionarImagen,
           child: AnimatedContainer(
-            duration: ResponsiveHelper.getAnimationDuration(),
-            curve: ResponsiveHelper.getAnimationCurve(),
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
             height: imageHeight,
             width: double.infinity,
             decoration: BoxDecoration(
@@ -136,20 +164,21 @@ class _CamaraWidgetState extends State<CamaraWidget> {
                 color: widget.imagenSeleccionada != null
                     ? const Color(0xFF099AD7)
                     : (widget.isAutoMode
-                        ? const Color(0xFFAFB5B3)
-                        : const Color(0xFFAFB5B3)),
+                    ? const Color(0xFFAFB5B3)
+                    : const Color(0xFFAFB5B3)),
                 width: widget.imagenSeleccionada != null ? 2.0 : 1.5,
               ),
-              borderRadius: ResponsiveHelper.getImageBorderRadius(context),
+              borderRadius: BorderRadius.circular(
+                ResponsiveHelper.getBorderRadius(context, base: 12),
+              ),
               boxShadow: widget.imagenSeleccionada != null
                   ? [
-                      BoxShadow(
-                        color: Color(0xFF099AD7),
-                        blurRadius:
-                            ResponsiveHelper.getElevation(context, base: 8),
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
+                BoxShadow(
+                  color: const Color(0xFF099AD7).withOpacity(0.3),
+                  blurRadius: ResponsiveHelper.getSpacing(context, base: 8),
+                  offset: const Offset(0, 2),
+                ),
+              ]
                   : null,
             ),
             child: widget.imagenSeleccionada == null
@@ -171,30 +200,31 @@ class _CamaraWidgetState extends State<CamaraWidget> {
             padding: EdgeInsets.all(
               ResponsiveHelper.getSpacing(context, base: 16),
             ),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Color(0xFFAFB5B3),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.camera_alt,
               size: ResponsiveHelper.getIconSize(context, base: 32),
-              color: Color(0xFF4C4547),
+              color: const Color(0xFF4C4547),
             ),
           ),
-          SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
+          SizedBox(height: ResponsiveHelper.getSpacing(context, base: 16)),
           Text(
             "Foto capturada automáticamente",
             style: TextStyle(
-              fontSize: ResponsiveHelper.getBodyFontSize(context),
+              fontSize: ResponsiveHelper.getFontSize(context, 14),
               color: const Color(0xFF666666),
               fontWeight: FontWeight.w400,
             ),
             textAlign: TextAlign.center,
           ),
+          SizedBox(height: ResponsiveHelper.getSpacing(context, base: 4)),
           Text(
             "Modo emergencia activado",
             style: TextStyle(
-              fontSize: ResponsiveHelper.getBodyFontSize(context, base: 12),
+              fontSize: ResponsiveHelper.getFontSize(context, 12),
               color: const Color(0xFF999999),
             ),
             textAlign: TextAlign.center,
@@ -211,8 +241,8 @@ class _CamaraWidgetState extends State<CamaraWidget> {
           padding: EdgeInsets.all(
             ResponsiveHelper.getSpacing(context, base: 16),
           ),
-          decoration: BoxDecoration(
-            color: const Color(0xFF099AD7),
+          decoration: const BoxDecoration(
+            color: Color(0xFF099AD7),
             shape: BoxShape.circle,
           ),
           child: Icon(
@@ -221,31 +251,28 @@ class _CamaraWidgetState extends State<CamaraWidget> {
             color: Colors.white,
           ),
         ),
-        SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
+        SizedBox(height: ResponsiveHelper.getSpacing(context, base: 16)),
         Text(
           "Seleccionar imagen",
           style: TextStyle(
-            fontSize: ResponsiveHelper.getBodyFontSize(context),
+            fontSize: ResponsiveHelper.getFontSize(context, 14),
             color: const Color(0xFF666666),
             fontWeight: FontWeight.w400,
           ),
           textAlign: TextAlign.center,
         ),
         if (ResponsiveHelper.isTablet(context) ||
-            ResponsiveHelper.isDesktop(context))
-          Padding(
-            padding: EdgeInsets.only(
-              top: ResponsiveHelper.getSpacing(context, base: 8),
+            ResponsiveHelper.isDesktop(context)) ...[
+          SizedBox(height: ResponsiveHelper.getSpacing(context, base: 8)),
+          Text(
+            "Haz clic para elegir una opción",
+            style: TextStyle(
+              fontSize: ResponsiveHelper.getFontSize(context, 12),
+              color: const Color(0xFF999999),
             ),
-            child: Text(
-              "Haz clic para elegir una opción",
-              style: TextStyle(
-                fontSize: ResponsiveHelper.getBodyFontSize(context, base: 12),
-                color: const Color(0xFF999999),
-              ),
-              textAlign: TextAlign.center,
-            ),
+            textAlign: TextAlign.center,
           ),
+        ],
       ],
     );
   }
@@ -254,7 +281,9 @@ class _CamaraWidgetState extends State<CamaraWidget> {
     return Stack(
       children: [
         ClipRRect(
-          borderRadius: ResponsiveHelper.getImageBorderRadius(context),
+          borderRadius: BorderRadius.circular(
+            ResponsiveHelper.getBorderRadius(context, base: 12),
+          ),
           child: Image.file(
             widget.imagenSeleccionada!,
             fit: BoxFit.cover,
@@ -277,15 +306,18 @@ class _CamaraWidgetState extends State<CamaraWidget> {
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black26,
-                    blurRadius: ResponsiveHelper.getElevation(context, base: 4),
+                    blurRadius: ResponsiveHelper.getSpacing(context, base: 4),
                     offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: Icon(
-                Icons.edit,
-                color: Colors.white,
-                size: ResponsiveHelper.getIconSize(context, base: 16),
+              child: GestureDetector(
+                onTap: _seleccionarImagen,
+                child: Icon(
+                  Icons.edit,
+                  color: Colors.white,
+                  size: ResponsiveHelper.getIconSize(context, base: 16),
+                ),
               ),
             ),
           ),
@@ -295,14 +327,19 @@ class _CamaraWidgetState extends State<CamaraWidget> {
             top: ResponsiveHelper.getSpacing(context, base: 12),
             left: ResponsiveHelper.getSpacing(context, base: 12),
             child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: EdgeInsets.symmetric(
+                horizontal: ResponsiveHelper.getSpacing(context, base: 8),
+                vertical: ResponsiveHelper.getSpacing(context, base: 4),
+              ),
               decoration: BoxDecoration(
                 color: const Color(0xFF56A049),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(
+                  ResponsiveHelper.getBorderRadius(context, base: 12),
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black26,
-                    blurRadius: ResponsiveHelper.getElevation(context, base: 4),
+                    blurRadius: ResponsiveHelper.getSpacing(context, base: 4),
                     offset: const Offset(0, 2),
                   ),
                 ],
@@ -310,7 +347,7 @@ class _CamaraWidgetState extends State<CamaraWidget> {
               child: Text(
                 'EMERGENCIA',
                 style: TextStyle(
-                  fontSize: 10,
+                  fontSize: ResponsiveHelper.getFontSize(context, 10),
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
                 ),

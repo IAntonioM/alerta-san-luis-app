@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_sound/flutter_sound.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart'; // Importar permission_handler
+import 'package:permission_handler/permission_handler.dart';
 import '../../../utils/responsive_helper.dart';
 
 enum AudioState { idle, recording, paused, recorded, playing }
@@ -67,11 +67,10 @@ class _AudioWidgetState extends State<AudioWidget>
       _recorder = FlutterSoundRecorder();
       _player = FlutterSoundPlayer();
 
-      // Verificar permisos antes de abrir el recorder
       final hasPermissions = await _requestPermissions();
       if (!hasPermissions) {
         debugPrint('No se pudieron obtener permisos, inicialización parcial');
-        await _player!.openPlayer(); // Solo abrir el player
+        await _player!.openPlayer();
         return;
       }
 
@@ -100,35 +99,28 @@ class _AudioWidgetState extends State<AudioWidget>
     return '${directory.path}/$fileName';
   }
 
-  // Función para verificar y solicitar permisos
   Future<bool> _requestPermissions() async {
     try {
-      // Verificar permisos actuales
       PermissionStatus microphoneStatus = await Permission.microphone.status;
-
       debugPrint('Estado actual del micrófono: $microphoneStatus');
 
-      // Si ya está concedido, retornar true
       if (microphoneStatus.isGranted) {
         debugPrint('Permisos ya concedidos');
         return true;
       }
 
-      // Si está denegado permanentemente, mostrar diálogo
       if (microphoneStatus.isPermanentlyDenied) {
         debugPrint('Permisos denegados permanentemente');
         _showPermissionDeniedDialog();
         return false;
       }
 
-      // Solicitar permisos si no están concedidos
       if (microphoneStatus.isDenied || microphoneStatus.isRestricted) {
         debugPrint('Solicitando permisos de micrófono...');
         microphoneStatus = await Permission.microphone.request();
         debugPrint('Resultado de solicitud: $microphoneStatus');
       }
 
-      // Verificar resultado final
       if (microphoneStatus.isGranted) {
         debugPrint('Permisos concedidos exitosamente');
         return true;
@@ -153,22 +145,47 @@ class _AudioWidgetState extends State<AudioWidget>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Permisos requeridos'),
-        content: const Text(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            ResponsiveHelper.getBorderRadius(context, base: 12),
+          ),
+        ),
+        title: Text(
+          'Permisos requeridos',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getFontSize(context, 18),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
           'Esta aplicación necesita acceso al micrófono para grabar audio. '
-          'Por favor, habilita los permisos en la configuración de la aplicación.',
+              'Por favor, habilita los permisos en la configuración de la aplicación.',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getFontSize(context, 14),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
+            child: Text(
+              'Cancelar',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getFontSize(context, 14),
+              ),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              openAppSettings(); // Abre la configuración de la app
+              openAppSettings();
             },
-            child: const Text('Configuración'),
+            child: Text(
+              'Configuración',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getFontSize(context, 14),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -177,13 +194,11 @@ class _AudioWidgetState extends State<AudioWidget>
 
   Future<void> _startRecording() async {
     try {
-      // Verificar si el recorder está inicializado
       if (_recorder == null) {
         _showErrorDialog('El grabador no está inicializado');
         return;
       }
 
-      // Verificar y solicitar permisos
       final hasPermissions = await _requestPermissions();
       if (!hasPermissions) {
         return;
@@ -206,7 +221,6 @@ class _AudioWidgetState extends State<AudioWidget>
       _pulseController.repeat();
       _waveController.repeat();
 
-      // Iniciar el timer para el contador
       _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (mounted) {
           setState(() {
@@ -228,11 +242,9 @@ class _AudioWidgetState extends State<AudioWidget>
   Future<void> _pauseRecording() async {
     try {
       await _recorder!.pauseRecorder();
-
       setState(() {
         _audioState = AudioState.paused;
       });
-
       _recordingTimer?.cancel();
       _pulseController.stop();
       _waveController.stop();
@@ -244,15 +256,12 @@ class _AudioWidgetState extends State<AudioWidget>
   Future<void> _resumeRecording() async {
     try {
       await _recorder!.resumeRecorder();
-
       setState(() {
         _audioState = AudioState.recording;
       });
-
       _pulseController.repeat();
       _waveController.repeat();
 
-      // Reanudar el timer desde donde se quedó
       final currentSeconds = _recordingDuration.inSeconds;
       _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (mounted) {
@@ -269,7 +278,6 @@ class _AudioWidgetState extends State<AudioWidget>
   Future<void> _stopRecording() async {
     try {
       await _recorder!.stopRecorder();
-
       _recordingTimer?.cancel();
 
       setState(() {
@@ -312,13 +320,10 @@ class _AudioWidgetState extends State<AudioWidget>
         },
       );
 
-      // Timer para actualizar el progreso de reproducción
-      _playbackTimer =
-          Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      _playbackTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
         if (mounted && _audioState == AudioState.playing) {
           setState(() {
             _playbackDuration = Duration(milliseconds: timer.tick * 100);
-            // Si llegamos al final, parar
             if (_playbackDuration >= _totalDuration) {
               _playbackDuration = _totalDuration;
             }
@@ -373,12 +378,34 @@ class _AudioWidgetState extends State<AudioWidget>
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Error'),
-        content: Text(message),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            ResponsiveHelper.getBorderRadius(context, base: 12),
+          ),
+        ),
+        title: Text(
+          'Error',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getFontSize(context, 18),
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: Text(
+          message,
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getFontSize(context, 14),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+            child: Text(
+              'OK',
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getFontSize(context, 14),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -393,12 +420,12 @@ class _AudioWidgetState extends State<AudioWidget>
         Text(
           'Audio de evidencia',
           style: TextStyle(
-            fontSize: ResponsiveHelper.getTitleFontSize(context, base: 18),
+            fontSize: ResponsiveHelper.getFontSize(context, 18),
             fontWeight: FontWeight.w500,
             color: const Color(0xFF333333),
           ),
         ),
-        SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
+        SizedBox(height: ResponsiveHelper.getSpacing(context, base: 12)),
         Container(
           width: double.infinity,
           padding: EdgeInsets.all(
@@ -406,7 +433,9 @@ class _AudioWidgetState extends State<AudioWidget>
           ),
           decoration: BoxDecoration(
             color: Colors.grey.shade50,
-            borderRadius: ResponsiveHelper.getImageBorderRadius(context),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getBorderRadius(context, base: 12),
+            ),
             border: Border.all(
               color: _audioState != AudioState.idle
                   ? const Color(0xFF099AD7)
@@ -420,8 +449,7 @@ class _AudioWidgetState extends State<AudioWidget>
               SizedBox(height: ResponsiveHelper.getSpacing(context, base: 16)),
               _buildAudioControls(),
               if (_audioState != AudioState.idle) ...[
-                SizedBox(
-                    height: ResponsiveHelper.getSpacing(context, base: 12)),
+                SizedBox(height: ResponsiveHelper.getSpacing(context, base: 12)),
                 _buildDurationInfo(),
               ],
             ],
@@ -436,7 +464,12 @@ class _AudioWidgetState extends State<AudioWidget>
       animation: _waveController,
       builder: (context, child) {
         return SizedBox(
-          height: ResponsiveHelper.getSpacing(context, base: 60),
+          height: ResponsiveHelper.responsiveValue(
+            context,
+            mobile: 60.0,
+            tablet: 70.0,
+            desktop: 80.0,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(5, (index) {
@@ -455,7 +488,7 @@ class _AudioWidgetState extends State<AudioWidget>
                     width: ResponsiveHelper.getSpacing(context, base: 4),
                     height: ResponsiveHelper.getSpacing(context, base: 30) *
                         (_audioState == AudioState.recording ||
-                                _audioState == AudioState.playing
+                            _audioState == AudioState.playing
                             ? animation.value
                             : 0.3),
                     margin: EdgeInsets.symmetric(
@@ -489,8 +522,10 @@ class _AudioWidgetState extends State<AudioWidget>
   }
 
   Widget _buildAudioControls() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: ResponsiveHelper.getSpacing(context, base: 8),
+      runSpacing: ResponsiveHelper.getSpacing(context, base: 8),
       children: [
         _buildControlButton(),
         if (_audioState == AudioState.recording) _buildPauseButton(),
@@ -541,28 +576,40 @@ class _AudioWidgetState extends State<AudioWidget>
               shape: BoxShape.circle,
               boxShadow: _audioState == AudioState.recording
                   ? [
-                      BoxShadow(
-                        color: color,
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      ),
-                    ]
+                BoxShadow(
+                  color: color,
+                  blurRadius: ResponsiveHelper.getSpacing(context, base: 10),
+                  spreadRadius: ResponsiveHelper.getSpacing(context, base: 2),
+                ),
+              ]
                   : null,
             ),
-            child: ElevatedButton(
-              onPressed: onPressed,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: color,
-                foregroundColor: Colors.white,
-                shape: const CircleBorder(),
-                padding: EdgeInsets.all(
-                  ResponsiveHelper.getSpacing(context, base: 16),
-                ),
-                elevation: ResponsiveHelper.getElevation(context, base: 4),
+            child: SizedBox(
+              width: ResponsiveHelper.responsiveValue(
+                context,
+                mobile: 60.0,
+                tablet: 70.0,
+                desktop: 80.0,
               ),
-              child: Icon(
-                icon,
-                size: ResponsiveHelper.getIconSize(context, base: 24),
+              height: ResponsiveHelper.responsiveValue(
+                context,
+                mobile: 60.0,
+                tablet: 70.0,
+                desktop: 80.0,
+              ),
+              child: ElevatedButton(
+                onPressed: onPressed,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: color,
+                  foregroundColor: Colors.white,
+                  shape: const CircleBorder(),
+                  padding: EdgeInsets.zero,
+                  elevation: 4,
+                ),
+                child: Icon(
+                  icon,
+                  size: ResponsiveHelper.getIconSize(context, base: 24),
+                ),
               ),
             ),
           ),
@@ -571,92 +618,67 @@ class _AudioWidgetState extends State<AudioWidget>
     );
   }
 
-  Widget _buildPauseButton() {
-    return ElevatedButton(
-      onPressed: _pauseRecording,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Color(0xFFBC966F),
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        padding: EdgeInsets.all(
-          ResponsiveHelper.getSpacing(context, base: 12),
-        ),
-      ),
-      child: Icon(
-        Icons.pause,
-        size: ResponsiveHelper.getIconSize(context, base: 20),
-      ),
-    );
-  }
+  Widget _buildPauseButton() => _buildSecondaryButton(
+    icon: Icons.pause,
+    color: const Color(0xFFBC966F),
+    onPressed: _pauseRecording,
+  );
 
-  Widget _buildResumeButton() {
-    return ElevatedButton(
-      onPressed: _resumeRecording,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Color(0xFF56A049),
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        padding: EdgeInsets.all(
-          ResponsiveHelper.getSpacing(context, base: 12),
-        ),
-      ),
-      child: Icon(
-        Icons.fiber_manual_record,
-        size: ResponsiveHelper.getIconSize(context, base: 20),
-      ),
-    );
-  }
+  Widget _buildResumeButton() => _buildSecondaryButton(
+    icon: Icons.fiber_manual_record,
+    color: const Color(0xFF56A049),
+    onPressed: _resumeRecording,
+  );
 
-  Widget _buildPlayButton() {
-    return ElevatedButton(
-      onPressed: _playAudio,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.green,
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        padding: EdgeInsets.all(
-          ResponsiveHelper.getSpacing(context, base: 12),
-        ),
-      ),
-      child: Icon(
-        Icons.play_arrow,
-        size: ResponsiveHelper.getIconSize(context, base: 20),
-      ),
-    );
-  }
+  Widget _buildPlayButton() => _buildSecondaryButton(
+    icon: Icons.play_arrow,
+    color: Colors.green,
+    onPressed: _playAudio,
+  );
 
-  Widget _buildStopPlayButton() {
-    return ElevatedButton(
-      onPressed: _stopPlaying,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Color(0xFFCD2036),
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        padding: EdgeInsets.all(
-          ResponsiveHelper.getSpacing(context, base: 12),
-        ),
-      ),
-      child: Icon(
-        Icons.stop,
-        size: ResponsiveHelper.getIconSize(context, base: 20),
-      ),
-    );
-  }
+  Widget _buildStopPlayButton() => _buildSecondaryButton(
+    icon: Icons.stop,
+    color: const Color(0xFFCD2036),
+    onPressed: _stopPlaying,
+  );
 
-  Widget _buildDeleteButton() {
-    return ElevatedButton(
-      onPressed: _deleteAudio,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: Color(0xFFCD2036),
-        foregroundColor: Colors.white,
-        shape: const CircleBorder(),
-        padding: EdgeInsets.all(
-          ResponsiveHelper.getSpacing(context, base: 12),
-        ),
+  Widget _buildDeleteButton() => _buildSecondaryButton(
+    icon: Icons.delete,
+    color: const Color(0xFFCD2036),
+    onPressed: _deleteAudio,
+  );
+
+  Widget _buildSecondaryButton({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      width: ResponsiveHelper.responsiveValue(
+        context,
+        mobile: 48.0,
+        tablet: 56.0,
+        desktop: 64.0,
       ),
-      child: Icon(
-        Icons.delete,
-        size: ResponsiveHelper.getIconSize(context, base: 20),
+      height: ResponsiveHelper.responsiveValue(
+        context,
+        mobile: 48.0,
+        tablet: 56.0,
+        desktop: 64.0,
+      ),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          shape: const CircleBorder(),
+          padding: EdgeInsets.zero,
+          elevation: 2,
+        ),
+        child: Icon(
+          icon,
+          size: ResponsiveHelper.getIconSize(context, base: 20),
+        ),
       ),
     );
   }
@@ -670,7 +692,7 @@ class _AudioWidgetState extends State<AudioWidget>
         break;
       case AudioState.playing:
         durationText =
-            '${_formatDuration(_playbackDuration)} / ${_formatDuration(_totalDuration)}';
+        '${_formatDuration(_playbackDuration)} / ${_formatDuration(_totalDuration)}';
         break;
       case AudioState.recorded:
         durationText = _formatDuration(_totalDuration);
@@ -693,7 +715,7 @@ class _AudioWidgetState extends State<AudioWidget>
         Text(
           durationText,
           style: TextStyle(
-            fontSize: ResponsiveHelper.getBodyFontSize(context, base: 14),
+            fontSize: ResponsiveHelper.getFontSize(context, 14),
             color: const Color(0xFF666666),
             fontFamily: 'monospace',
           ),

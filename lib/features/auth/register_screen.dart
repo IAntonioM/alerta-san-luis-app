@@ -15,7 +15,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _phoneController = TextEditingController();
   final _dniController = TextEditingController();
   final _emailController = TextEditingController();
-  final _addressController = TextEditingController();  
+  final _addressController = TextEditingController();
   final _passwordController = TextEditingController();
   final _passwordConfirmController = TextEditingController();
 
@@ -103,7 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       hintText: hintText,
       hintStyle: TextStyle(
         color: Colors.white70,
-        fontSize: ResponsiveHelper.getBodyFontSize(context),
+        fontSize: ResponsiveHelper.getFontSize(context, 16),
       ),
       border: const UnderlineInputBorder(
         borderSide: BorderSide(color: Colors.white70),
@@ -123,28 +123,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // Estilo común para el texto de los campos
   TextStyle _getTextFieldStyle() {
     return TextStyle(
-      fontSize: ResponsiveHelper.getBodyFontSize(context),
+      fontSize: ResponsiveHelper.getFontSize(context, 16),
       color: Colors.white,
     );
   }
 
   // Widget para crear un campo de texto personalizado
   Widget _buildTextField({
-  required TextEditingController controller,
-  required String hintText,
-  TextInputType? keyboardType,
-  String? Function(String?)? validator,
-  bool obscureText = false, 
-}) {
-  return TextFormField(
-    controller: controller,
-    keyboardType: keyboardType,
-    style: _getTextFieldStyle(),
-    decoration: _getInputDecoration(hintText),
-    validator: validator,
-    obscureText: obscureText, 
-  );
-}
+    required TextEditingController controller,
+    required String hintText,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+    bool obscureText = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: _getTextFieldStyle(),
+      decoration: _getInputDecoration(hintText),
+      validator: validator,
+      obscureText: obscureText,
+    );
+  }
 
   // Validadores
   String? _validateFullName(String? value) {
@@ -209,17 +209,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   String? _validatePasswordConfirm(String? value) {
-  if (value == null || value.trim().isEmpty) {
-    return 'Por favor confirma tu contraseña';
+    if (value == null || value.trim().isEmpty) {
+      return 'Por favor confirma tu contraseña';
+    }
+    if (value != _passwordController.text.trim()) {
+      return 'Las contraseñas no son iguales';
+    }
+    return null;
   }
-  if (value != _passwordController.text.trim()) {
-    return 'Las contraseñas no son iguales';
-  }
-  return null;
-}
 
   List<Widget> _buildFormFields() {
-    final spacing = ResponsiveHelper.getFormFieldSpacing(context);
+    final spacing = ResponsiveHelper.getSpacing(context, base: 20);
 
     return [
       _buildTextField(
@@ -301,27 +301,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ..._buildFormFields(),
 
                         SizedBox(
-                            height: ResponsiveHelper.getFormSpacing(context)),
+                          height: ResponsiveHelper.getSpacing(context, base: 32),
+                        ),
 
                         // Checkbox de términos
                         _buildTermsCheckbox(),
 
                         SizedBox(
-                            height: ResponsiveHelper.getFormSpacing(context)),
+                          height: ResponsiveHelper.getSpacing(context, base: 32),
+                        ),
 
                         // Botón de registro
                         _buildRegisterButton(),
 
                         SizedBox(
-                            height:
-                                ResponsiveHelper.getSpacing(context, base: 24)),
+                          height: ResponsiveHelper.getSpacing(context, base: 24),
+                        ),
 
                         // Enlace a login
                         _buildLoginLink(),
 
                         SizedBox(
-                            height:
-                                ResponsiveHelper.getSpacing(context, base: 32)),
+                          height: ResponsiveHelper.getSpacing(context, base: 32),
+                        ),
                       ],
                     ),
                   ),
@@ -352,23 +354,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
               child: Center(
                 child: Image.asset(
                   'assets/imgs/logo.png',
-                  height: ResponsiveHelper.getResponsiveHeight(context, 100),
+                  height: ResponsiveHelper.getResponsiveSize(context, 100),
                   fit: BoxFit.contain,
                 ),
               ),
             ),
             SizedBox(
-                width: ResponsiveHelper.getIconSize(context) + 16), // Balance
+              width: ResponsiveHelper.getIconSize(context) + 16,
+            ), // Balance
           ],
         ),
-    
+
         SizedBox(height: ResponsiveHelper.getSpacing(context, base: 8)),
-    
+
         // Título
         Text(
           'Registro',
           style: TextStyle(
-            fontSize: ResponsiveHelper.getTitleFontSize(context, base: 28),
+            fontSize: ResponsiveHelper.getFontSize(context, 28),
             fontWeight: FontWeight.w700,
             color: Colors.white,
             letterSpacing: 0.5,
@@ -379,32 +382,35 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Widget _buildTermsCheckbox() {
-  return Container(
-    decoration: BoxDecoration(
-      color: Colors.white.withOpacity(0.2), 
-      borderRadius: BorderRadius.circular(8), 
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 8), 
-    child: CheckboxListTile(
-      value: _acceptedTerms,
-      onChanged: (value) {
-        setState(() => _acceptedTerms = value ?? false);
-      },
-      title: Text(
-        'Estoy de acuerdo con los Términos y Servicios',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: ResponsiveHelper.getBodyFontSize(context, base: 14),
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(
+          ResponsiveHelper.getBorderRadius(context),
         ),
       ),
-      checkColor: Colors.white,
-      activeColor: const Color(0xFF1976D2),
-      contentPadding: EdgeInsets.zero,
-      controlAffinity: ListTileControlAffinity.leading,
-    ),
-  );
-}
-
+      padding: EdgeInsets.symmetric(
+        horizontal: ResponsiveHelper.getSpacing(context, base: 8),
+      ),
+      child: CheckboxListTile(
+        value: _acceptedTerms,
+        onChanged: (value) {
+          setState(() => _acceptedTerms = value ?? false);
+        },
+        title: Text(
+          'Estoy de acuerdo con los Términos y Servicios',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: ResponsiveHelper.getFontSize(context, 14),
+          ),
+        ),
+        checkColor: Colors.white,
+        activeColor: const Color(0xFF1976D2),
+        contentPadding: EdgeInsets.zero,
+        controlAffinity: ListTileControlAffinity.leading,
+      ),
+    );
+  }
 
   Widget _buildRegisterButton() {
     return SizedBox(
@@ -414,9 +420,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
         onPressed: (_acceptedTerms && !_isLoading) ? _handleRegister : null,
         style: ElevatedButton.styleFrom(
           backgroundColor:
-              _acceptedTerms ? const Color(0xFF1976D2) : Colors.grey,
+          _acceptedTerms ? const Color(0xFF1976D2) : Colors.grey,
           foregroundColor: Colors.white,
-          elevation: ResponsiveHelper.getElevation(context),
+          elevation: ResponsiveHelper.responsiveValue<double>(
+            context,
+            mobile: 4.0,
+            tablet: 6.0,
+            desktop: 8.0,
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(
               ResponsiveHelper.getBorderRadius(context),
@@ -425,21 +436,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         child: _isLoading
             ? SizedBox(
-                height: ResponsiveHelper.getIconSize(context, base: 20),
-                width: ResponsiveHelper.getIconSize(context, base: 20),
-                child: const CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
+          height: ResponsiveHelper.getResponsiveSize(context, 20),
+          width: ResponsiveHelper.getResponsiveSize(context, 20),
+          child: const CircularProgressIndicator(
+            color: Colors.white,
+            strokeWidth: 2,
+          ),
+        )
             : Text(
-                'Registrarse',
-                style: TextStyle(
-                  fontSize: ResponsiveHelper.getButtonFontSize(context),
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 0.5,
-                ),
-              ),
+          'Registrarse',
+          style: TextStyle(
+            fontSize: ResponsiveHelper.getFontSize(context, 16),
+            fontWeight: FontWeight.w500,
+            letterSpacing: 0.5,
+          ),
+        ),
       ),
     );
   }
@@ -451,7 +462,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         '¿Ya tienes cuenta? Iniciar Sesión',
         style: TextStyle(
           color: Colors.white70,
-          fontSize: ResponsiveHelper.getBodyFontSize(context, base: 14),
+          fontSize: ResponsiveHelper.getFontSize(context, 14),
           fontWeight: FontWeight.w400,
         ),
       ),

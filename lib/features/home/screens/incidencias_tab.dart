@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:boton_panico_app/utils/responsive_helper.dart';
 import 'package:flutter/material.dart';
 import '../../incidencias/incidencias_screen.dart';
 import '../../../service/menu_service.dart';
@@ -51,189 +52,87 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
 
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.all(20),
+      padding: ResponsiveHelper.getScreenPadding(context),
       child: SingleChildScrollView(
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-            // Construir filas dinámicamente con 4 elementos por fila
-            ..._buildDynamicRows(),
-          ],
+        child: ResponsiveHelper.centeredContent(
+          context,
+          Column(
+            children: [
+              SizedBox(height: ResponsiveHelper.getSpacing(context, base: 20)),
+              // Grid responsivo de incidencias
+              _buildResponsiveGrid(),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Método modificado para 4 elementos por fila en incidencias
-  List<Widget> _buildDynamicRows() {
-    List<Widget> rows = [];
+  Widget _buildResponsiveGrid() {
+    // Determinar número de columnas según el dispositivo
+    final columns = ResponsiveHelper.getGridColumns(
+      context,
+      mobile: 3,
+      tablet: 4,
+      desktop: 4,
+    );
 
-    for (int i = 0; i < incidenciaMenus.length; i += 4) {
-      List<Widget> rowChildren = [];
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns,
+        crossAxisSpacing: ResponsiveHelper.getSpacing(context, base: 8),
+        mainAxisSpacing: ResponsiveHelper.getSpacing(context, base: 16),
+        childAspectRatio: _getChildAspectRatio(context),
+      ),
+      itemCount: incidenciaMenus.length,
+      itemBuilder: (context, index) {
+        final menu = incidenciaMenus[index];
+        return _buildCard(
+          iconUrl: MenuService.getIconUrl(menu.iconoCategoria),
+          text: menu.nomCategoria.toUpperCase(),
+          color: _getColorForCategory(menu.nomCategoria),
+          onTap: () => _handleCardTap(menu),
+        );
+      },
+    );
+  }
 
-      // Primer elemento de la fila
-      rowChildren.add(
-        Expanded(
-          child: _buildCard(
-            iconUrl: MenuService.getIconUrl(incidenciaMenus[i].iconoCategoria),
-            text: incidenciaMenus[i].nomCategoria.toUpperCase(),
-            color: _getColorForCategory(incidenciaMenus[i].nomCategoria),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => IncidenciaFormScreen(
-                    tipo: incidenciaMenus[i].nomCategoria,
-                    idCategoria: incidenciaMenus[i].idCategoria.toString(),
-                  ),
-                ),
-              );
-            },
+  double _getChildAspectRatio(BuildContext context) {
+    // Ajustar la proporción según el dispositivo para mejor visualización
+    if (ResponsiveHelper.isSmallMobile(context)) {
+      return 0.7;
+    } else if (ResponsiveHelper.isMobile(context)) {
+      return 0.75;
+    } else if (ResponsiveHelper.isTablet(context)) {
+      return 0.8;
+    } else {
+      return 0.85;
+    }
+  }
+
+  void _handleCardTap(MenuCategory menu) {
+    if (menu.nomCategoria.toLowerCase().contains('alerta')) {
+      // Acción para alerta rápida
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${menu.nomCategoria} activada'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } else {
+      // Navegar al formulario
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => IncidenciaFormScreen(
+            tipo: menu.nomCategoria,
+            idCategoria: menu.idCategoria.toString(),
           ),
         ),
       );
-
-      rowChildren.add(const SizedBox(width: 8));
-
-      // Segundo elemento de la fila (si existe)
-      if (i + 1 < incidenciaMenus.length) {
-        rowChildren.add(
-          Expanded(
-            child: _buildCard(
-              iconUrl:
-                  MenuService.getIconUrl(incidenciaMenus[i + 1].iconoCategoria),
-              text: incidenciaMenus[i + 1].nomCategoria.toUpperCase(),
-              color: _getColorForCategory(incidenciaMenus[i + 1].nomCategoria),
-              onTap: () {
-                if (incidenciaMenus[i + 1]
-                    .nomCategoria
-                    .toLowerCase()
-                    .contains('alerta')) {
-                  // Acción para alerta rápida
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            '${incidenciaMenus[i + 1].nomCategoria} activada')),
-                  );
-                } else {
-                  // Navegar al formulario
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => IncidenciaFormScreen(
-                        tipo: incidenciaMenus[i + 1].nomCategoria,
-                        idCategoria:
-                            incidenciaMenus[i + 1].idCategoria.toString(),
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-          ),
-        );
-      } else {
-        // Espacio vacío si no hay segundo elemento
-        rowChildren.add(Expanded(child: Container()));
-      }
-
-      rowChildren.add(const SizedBox(width: 8));
-
-      // Tercer elemento de la fila (si existe)
-      if (i + 2 < incidenciaMenus.length) {
-        rowChildren.add(
-          Expanded(
-            child: _buildCard(
-              iconUrl:
-                  MenuService.getIconUrl(incidenciaMenus[i + 2].iconoCategoria),
-              text: incidenciaMenus[i + 2].nomCategoria.toUpperCase(),
-              color: _getColorForCategory(incidenciaMenus[i + 2].nomCategoria),
-              onTap: () {
-                if (incidenciaMenus[i + 2]
-                    .nomCategoria
-                    .toLowerCase()
-                    .contains('alerta')) {
-                  // Acción para alerta rápida
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            '${incidenciaMenus[i + 2].nomCategoria} activada')),
-                  );
-                } else {
-                  // Navegar al formulario
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => IncidenciaFormScreen(
-                        tipo: incidenciaMenus[i + 2].nomCategoria,
-                        idCategoria:
-                            incidenciaMenus[i + 2].idCategoria.toString(),
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-          ),
-        );
-      } else {
-        // Espacio vacío si no hay tercer elemento
-        rowChildren.add(Expanded(child: Container()));
-      }
-
-      rowChildren.add(const SizedBox(width: 8));
-
-      // Cuarto elemento de la fila (si existe)
-      if (i + 3 < incidenciaMenus.length) {
-        rowChildren.add(
-          Expanded(
-            child: _buildCard(
-              iconUrl:
-                  MenuService.getIconUrl(incidenciaMenus[i + 3].iconoCategoria),
-              text: incidenciaMenus[i + 3].nomCategoria.toUpperCase(),
-              color: _getColorForCategory(incidenciaMenus[i + 3].nomCategoria),
-              onTap: () {
-                if (incidenciaMenus[i + 3]
-                    .nomCategoria
-                    .toLowerCase()
-                    .contains('alerta')) {
-                  // Acción para alerta rápida
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(
-                            '${incidenciaMenus[i + 3].nomCategoria} activada')),
-                  );
-                } else {
-                  // Navegar al formulario
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => IncidenciaFormScreen(
-                        tipo: incidenciaMenus[i + 3].nomCategoria,
-                        idCategoria:
-                            incidenciaMenus[i + 3].idCategoria.toString(),
-                      ),
-                    ),
-                  );
-                }
-              },
-            ),
-          ),
-        );
-      } else {
-        // Espacio vacío si no hay cuarto elemento
-        rowChildren.add(Expanded(child: Container()));
-      }
-
-      rows.add(Row(children: rowChildren));
-
-      // Agregar espaciado entre filas (excepto después de la última)
-      if (i + 4 < incidenciaMenus.length) {
-        rows.add(const SizedBox(height: 16));
-      }
     }
-
-    return rows;
   }
 
   Color _getColorForCategory(String categoryName) {
@@ -258,51 +157,63 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final cardHeight = ResponsiveHelper.getResponsiveSize(context, 100.0);
+    final iconSize = ResponsiveHelper.getIconSize(context, base: 60);
+    final textHeight = ResponsiveHelper.getResponsiveSize(context, 60.0);
+    final borderRadius = ResponsiveHelper.getBorderRadius(context, base: 12);
+    final elevation = ResponsiveHelper.getElevation(context, base: 6);
+
     return GestureDetector(
       onTap: onTap,
       child: Column(
         children: [
           // Card principal
           Container(
-            height: 100,
+            height: cardHeight,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(borderRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black,
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: elevation,
+                  offset: Offset(0, elevation / 2),
                 ),
               ],
             ),
             child: Center(
               child: CachedNetworkImage(
                 imageUrl: iconUrl,
-                height: 100,
-                width: 100,
+                height: iconSize,
+                width: iconSize,
                 fit: BoxFit.contain,
-                placeholder: (context, url) =>
-                    const CircularProgressIndicator(),
+                placeholder: (context, url) => SizedBox(
+                  width: ResponsiveHelper.getIconSize(context, base: 24),
+                  height: ResponsiveHelper.getIconSize(context, base: 24),
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
                 errorWidget: (context, url, error) => Icon(
                   _getDefaultIcon(),
-                  size: 35,
+                  size: ResponsiveHelper.getIconSize(context, base: 35),
                   color: Colors.white,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: ResponsiveHelper.getSpacing(context, base: 8)),
           // Contenedor con altura fija para el texto
           SizedBox(
-            height: 60, // Altura fija para 2 líneas de texto
+            height: textHeight,
             child: Text(
               text,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 13,
+              style: TextStyle(
+                fontSize: ResponsiveHelper.getCaptionFontSize(context, base: 11),
                 fontWeight: FontWeight.w900,
-                color: Color(0xFF333333),
+                color: const Color(0xFF333333),
               ),
               maxLines: 5,
               overflow: TextOverflow.ellipsis,

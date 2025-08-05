@@ -81,7 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          
+
           // Debug: mostrar datos guardados
           final savedUser = await UserStorageService.getUser();
           print('Usuario guardado: ${savedUser?.nombre}, ID: ${savedUser?.id}');
@@ -128,22 +128,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Logo
+                      // Logo - usando getResponsiveSize
                       Image.asset(
                         'assets/imgs/logo.png',
-                        height:
-                            ResponsiveHelper.getImageSize(context, base: 120),
+                        height: ResponsiveHelper.getResponsiveSize(context, 120),
                         fit: BoxFit.contain,
                       ),
                       SizedBox(
-                          height:
-                              ResponsiveHelper.getSpacing(context, base: 40)),
-                      // Title
+                        height: ResponsiveHelper.getSpacing(context, base: 40),
+                      ),
+                      // Title - usando getFontSize
                       Text(
                         'Iniciar Sesión',
                         style: TextStyle(
-                          fontSize:
-                              ResponsiveHelper.getHeadlineFontSize(context),
+                          fontSize: ResponsiveHelper.getFontSize(context, 28),
                           fontWeight: FontWeight.w300,
                           color: const Color.fromARGB(255, 255, 255, 255),
                           letterSpacing: 0.5,
@@ -160,21 +158,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       // Email TextField
                       SizedBox(
-                        height: ResponsiveHelper.getTextFieldHeight(context),
+                        height: ResponsiveHelper.getResponsiveSize(context, 60),
                         child: TextFormField(
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
                           validator: _validateEmail,
                           style: TextStyle(
-                            fontSize: ResponsiveHelper.getBodyFontSize(context),
+                            fontSize: ResponsiveHelper.getFontSize(context, 16),
                             color: const Color.fromARGB(255, 255, 255, 255),
                           ),
                           decoration: InputDecoration(
                             hintText: 'Correo electrónico',
                             hintStyle: TextStyle(
                               color: const Color.fromARGB(255, 255, 255, 255),
-                              fontSize:
-                                  ResponsiveHelper.getBodyFontSize(context),
+                              fontSize: ResponsiveHelper.getFontSize(context, 16),
                             ),
                             border: UnderlineInputBorder(
                               borderSide: BorderSide(
@@ -193,34 +190,32 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: ResponsiveHelper.getSpacing(context,
-                                  base: 16),
+                              vertical: ResponsiveHelper.getSpacing(context, base: 16),
                             ),
                           ),
                         ),
                       ),
 
                       SizedBox(
-                          height:
-                              ResponsiveHelper.getFormFieldSpacing(context)),
+                        height: ResponsiveHelper.getSpacing(context, base: 20),
+                      ),
 
                       // Password TextField
                       SizedBox(
-                        height: ResponsiveHelper.getTextFieldHeight(context),
+                        height: ResponsiveHelper.getResponsiveSize(context, 60),
                         child: TextFormField(
                           controller: passwordController,
                           obscureText: true,
                           validator: _validatePassword,
                           style: TextStyle(
-                            fontSize: ResponsiveHelper.getBodyFontSize(context),
+                            fontSize: ResponsiveHelper.getFontSize(context, 16),
                             color: const Color.fromARGB(255, 255, 255, 255),
                           ),
                           decoration: InputDecoration(
                             hintText: 'Contraseña',
                             hintStyle: TextStyle(
                               color: const Color.fromARGB(255, 255, 255, 255),
-                              fontSize:
-                                  ResponsiveHelper.getBodyFontSize(context),
+                              fontSize: ResponsiveHelper.getFontSize(context, 16),
                             ),
                             border: UnderlineInputBorder(
                               borderSide: BorderSide(
@@ -239,15 +234,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: ResponsiveHelper.getSpacing(context,
-                                  base: 16),
+                              vertical: ResponsiveHelper.getSpacing(context, base: 16),
                             ),
                           ),
                         ),
                       ),
 
                       SizedBox(
-                          height: ResponsiveHelper.getFormSpacing(context)),
+                        height: ResponsiveHelper.getSpacing(context, base: 32),
+                      ),
 
                       // Login Button
                       SizedBox(
@@ -260,7 +255,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ? Colors.grey
                                 : const Color(0xFF1976D2),
                             foregroundColor: Colors.white,
-                            elevation: ResponsiveHelper.getElevation(context),
+                            elevation: ResponsiveHelper.responsiveValue<double>(
+                              context,
+                              mobile: 4.0,
+                              tablet: 6.0,
+                              desktop: 8.0,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(
                                 ResponsiveHelper.getBorderRadius(context),
@@ -269,29 +269,27 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: _isLoading
                               ? SizedBox(
-                                  height: 20,
-                                  width: 20,
-                                  child: const CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
+                            height: ResponsiveHelper.getResponsiveSize(context, 20),
+                            width: ResponsiveHelper.getResponsiveSize(context, 20),
+                            child: const CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
                               : Text(
-                                  'Ingresar',
-                                  style: TextStyle(
-                                    fontSize:
-                                        ResponsiveHelper.getButtonFontSize(
-                                            context),
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
+                            'Ingresar',
+                            style: TextStyle(
+                              fontSize: ResponsiveHelper.getFontSize(context, 16),
+                              fontWeight: FontWeight.w500,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
                         ),
                       ),
 
                       SizedBox(
-                          height:
-                              ResponsiveHelper.getSpacing(context, base: 24)),
+                        height: ResponsiveHelper.getSpacing(context, base: 24),
+                      ),
 
                       // Register Link
                       TextButton(
@@ -300,17 +298,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.symmetric(
-                            vertical:
-                                ResponsiveHelper.getSpacing(context, base: 12),
-                            horizontal:
-                                ResponsiveHelper.getSpacing(context, base: 16),
+                            vertical: ResponsiveHelper.getSpacing(context, base: 12),
+                            horizontal: ResponsiveHelper.getSpacing(context, base: 16),
                           ),
                         ),
                         child: Text(
                           '¿No tienes cuenta? Regístrate',
                           style: TextStyle(
                             color: const Color.fromARGB(255, 255, 255, 255),
-                            fontSize: ResponsiveHelper.getBodyFontSize(context),
+                            fontSize: ResponsiveHelper.getFontSize(context, 14),
                             fontWeight: FontWeight.w400,
                           ),
                           textAlign: TextAlign.center,
@@ -322,7 +318,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Bottom spacing
                 SizedBox(
-                    height: ResponsiveHelper.getSpacing(context, base: 60)),
+                  height: ResponsiveHelper.getSpacing(context, base: 60),
+                ),
               ],
             ),
           ),

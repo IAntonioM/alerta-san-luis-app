@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:boton_panico_app/utils/responsive_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -30,7 +31,6 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
   static const int _emergencyGroupId = 2;
   static const int _panicCategoryId = 22;
   static const int _countdownDuration = 20;
-  static const int _itemsPerRow = 3;
   static const Duration _socketConnectionDelay = Duration(milliseconds: 1500);
 
   // Colores
@@ -57,7 +57,7 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.all(20),
+      padding: ResponsiveHelper.getScreenPadding(context),
       child: _isLoading ? _buildLoadingWidget() : _buildContent(),
     );
   }
@@ -71,57 +71,111 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
 
   Widget _buildContent() {
     return SingleChildScrollView(
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          ..._buildEmergencyGrid(),
-          const SizedBox(height: 30),
-          _buildPanicButton(),
-        ],
+      child: ResponsiveHelper.centeredContent(
+        context,
+        Column(
+          children: [
+            SizedBox(height: ResponsiveHelper.getSpacing(context, base: 20)),
+            _buildEmergencyGrid(),
+            SizedBox(height: ResponsiveHelper.getSectionSpacing(context)),
+            _buildPanicButton(),
+          ],
+        ),
       ),
     );
   }
 
+  Widget _buildEmergencyGrid() {
+    // Determinar número de columnas según el dispositivo
+    final columns = ResponsiveHelper.getGridColumns(
+      context,
+      mobile: 3,
+      tablet: 3,
+      desktop: 3,
+    );
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: columns,
+        crossAxisSpacing: ResponsiveHelper.getSpacing(context, base: 12),
+        mainAxisSpacing: ResponsiveHelper.getSpacing(context, base: 20),
+        childAspectRatio: _getChildAspectRatio(context),
+      ),
+      itemCount: _emergenciaMenus.length,
+      itemBuilder: (context, index) {
+        final menu = _emergenciaMenus[index];
+        return _buildEmergencyCard(
+          iconUrl: MenuService.getIconUrl(menu.iconoCategoria),
+          text: menu.nomCategoria,
+          color: _getColorForCategory(menu.nomCategoria),
+          onTap: () => _handleEmergencyAlert(menu),
+        );
+      },
+    );
+  }
+
+  double _getChildAspectRatio(BuildContext context) {
+    // Ajustar la proporción según el dispositivo
+    if (ResponsiveHelper.isSmallMobile(context)) {
+      return 0.65;
+    } else if (ResponsiveHelper.isMobile(context)) {
+      return 0.7;
+    } else if (ResponsiveHelper.isTablet(context)) {
+      return 0.75;
+    } else {
+      return 0.8;
+    }
+  }
+
   Widget _buildPanicButton() {
+    final buttonHeight = ResponsiveHelper.getResponsiveSize(context, 250.0);
+    final iconSize = ResponsiveHelper.getIconSize(context, base: 120);
+    final titleFontSize = ResponsiveHelper.getTitleFontSize(context, base: 28);
+    final subtitleFontSize = ResponsiveHelper.getBodyFontSize(context, base: 16);
+    final borderRadius = ResponsiveHelper.getBorderRadius(context, base: 16);
+    final elevation = ResponsiveHelper.getElevation(context, base: 8);
+
     return GestureDetector(
       onTap: _handlePanicButton,
       child: Container(
         width: double.infinity,
-        height: 250,
+        height: buttonHeight,
         decoration: BoxDecoration(
           color: _panicButtonColor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(borderRadius),
           boxShadow: [
             BoxShadow(
-              color: Colors.black,
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+              color: Colors.black.withOpacity(0.3),
+              blurRadius: elevation,
+              offset: Offset(0, elevation / 2),
             ),
           ],
         ),
-        child: const Column(
+        child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.phone_in_talk,
-              size: 120,
+              size: iconSize,
               color: _errorColor,
             ),
-            SizedBox(height: 16),
+            SizedBox(height: ResponsiveHelper.getSpacing(context, base: 16)),
             Text(
               'BOTÓN DE PÁNICO',
               style: TextStyle(
-                fontSize: 28,
+                fontSize: titleFontSize,
                 fontWeight: FontWeight.bold,
                 color: _errorColor,
-                letterSpacing: 1.2,
+                letterSpacing: ResponsiveHelper.isMobile(context) ? 0.8 : 1.2,
               ),
             ),
-            SizedBox(height: 8),
+            SizedBox(height: ResponsiveHelper.getSpacing(context, base: 8)),
             Text(
               'Presiona para emergencia',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: subtitleFontSize,
                 color: _textColor,
                 fontWeight: FontWeight.w500,
               ),
@@ -138,50 +192,65 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final cardHeight = ResponsiveHelper.getResponsiveSize(context, 110.0);
+    final iconSize = ResponsiveHelper.getIconSize(context, base: 80);
+    final fontSize = ResponsiveHelper.getBodyFontSize(context, base: 16);
+    final borderRadius = ResponsiveHelper.getBorderRadius(context, base: 16);
+    final elevation = ResponsiveHelper.getElevation(context, base: 6);
+
     return GestureDetector(
       onTap: onTap,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            height: 110,
+            height: cardHeight,
             decoration: BoxDecoration(
               color: color,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(borderRadius),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black,
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: elevation,
+                  offset: Offset(0, elevation / 2),
                 ),
               ],
             ),
             child: Center(
               child: CachedNetworkImage(
                 imageUrl: iconUrl,
-                height: 80,
-                width: 80,
+                height: iconSize,
+                width: iconSize,
                 fit: BoxFit.contain,
-                placeholder: (context, url) => const CircularProgressIndicator(),
-                errorWidget: (context, url, error) => const Icon(
+                placeholder: (context, url) => SizedBox(
+                  width: ResponsiveHelper.getIconSize(context, base: 24),
+                  height: ResponsiveHelper.getIconSize(context, base: 24),
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                errorWidget: (context, url, error) => Icon(
                   Icons.emergency,
-                  size: 50,
+                  size: ResponsiveHelper.getIconSize(context, base: 50),
                   color: Colors.white,
                 ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            text,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: _textColor,
+          SizedBox(height: ResponsiveHelper.getSpacing(context, base: 12)),
+          Flexible(
+            child: Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
+                color: _textColor,
+              ),
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
             ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -210,47 +279,6 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
     }
   }
 
-  // Construcción de la grilla de emergencias
-  List<Widget> _buildEmergencyGrid() {
-    final rows = <Widget>[];
-
-    for (int i = 0; i < _emergenciaMenus.length; i += _itemsPerRow) {
-      final rowItems = <Widget>[];
-
-      for (int j = 0; j < _itemsPerRow; j++) {
-        final index = i + j;
-        
-        if (index < _emergenciaMenus.length) {
-          final menu = _emergenciaMenus[index];
-          rowItems.add(
-            Expanded(
-              child: _buildEmergencyCard(
-                iconUrl: MenuService.getIconUrl(menu.iconoCategoria),
-                text: menu.nomCategoria,
-                color: _getColorForCategory(menu.nomCategoria),
-                onTap: () => _handleEmergencyAlert(menu),
-              ),
-            ),
-          );
-        } else {
-          rowItems.add(Expanded(child: Container()));
-        }
-
-        if (j < _itemsPerRow - 1) {
-          rowItems.add(const SizedBox(width: 12));
-        }
-      }
-
-      rows.add(Row(children: rowItems));
-
-      if (i + _itemsPerRow < _emergenciaMenus.length) {
-        rows.add(const SizedBox(height: 20));
-      }
-    }
-
-    return rows;
-  }
-
   // Manejo de alertas de emergencia
   Future<void> _handleEmergencyAlert(MenuCategory menu) async {
     final shouldSend = await _showConfirmationDialog(
@@ -265,12 +293,13 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
   }
 
   Future<void> _sendEmergencyAlert(MenuCategory menu) async {
-    _showLoadingDialog('Enviando Alerta', 'Procesando tu solicitud de emergencia...');
+    _showLoadingDialog(
+        'Enviando Alerta', 'Procesando tu solicitud de emergencia...');
 
     try {
       final user = await _getUserData();
       final position = await _getCurrentLocation();
-      
+
       if (user == null || position == null) return;
 
       final response = await AlertService.registerAlert(
@@ -290,7 +319,8 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
       _closeDialog();
 
       if (response.success) {
-        _showSuccessSnackBar('Alerta de ${menu.nomCategoria} enviada exitosamente');
+        _showSuccessSnackBar(
+            'Alerta de ${menu.nomCategoria} enviada exitosamente');
       } else {
         throw Exception(response.error);
       }
@@ -314,12 +344,13 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
   }
 
   Future<void> _sendPanicAlert() async {
-    _showLoadingDialog('Enviando Alerta de Pánico', 'Procesando tu solicitud de emergencia...');
+    _showLoadingDialog('Enviando Alerta de Pánico',
+        'Procesando tu solicitud de emergencia...');
 
     try {
       final user = await _getUserData();
       final position = await _getCurrentLocation();
-      
+
       if (user == null || position == null) return;
 
       final response = await BotonDePanicoService.sendPanicAlert(
@@ -450,7 +481,7 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
 
   void _showWaitingDialog() {
     _remainingSeconds = _countdownDuration;
-    late StateSetter dialogSetState;
+    StateSetter? dialogSetState;
 
     showDialog(
       context: context,
@@ -465,16 +496,20 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const CircularProgressIndicator(color: _primaryColor),
-                const SizedBox(height: 16),
-                const Text(
+                SizedBox(height: ResponsiveHelper.getSpacing(context, base: 16)),
+                Text(
                   'Estamos a la espera de una respuesta del personal de seguridad.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: _textColor),
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getBodyFontSize(context, base: 16),
+                    color: _textColor,
+                  ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: ResponsiveHelper.getSpacing(context, base: 8)),
                 Text(
                   'Tiempo restante: $_remainingSeconds segundos',
-                  style: const TextStyle(
+                  style: TextStyle(
+                    fontSize: ResponsiveHelper.getBodyFontSize(context, base: 14),
                     fontWeight: FontWeight.bold,
                     color: _primaryColor,
                   ),
@@ -485,18 +520,32 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
           );
         },
       ),
-    );
+    ).then((_) {
+      _countdownTimer?.cancel();
+    });
 
-    _startCountdownTimer(dialogSetState);
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (dialogSetState != null) {
+        _startCountdownTimer(dialogSetState!);
+      }
+    });
   }
 
   void _startCountdownTimer(StateSetter dialogSetState) {
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_remainingSeconds > 0) {
-        dialogSetState(() => _remainingSeconds--);
+        if (mounted && Navigator.canPop(context)) {
+          try {
+            dialogSetState(() => _remainingSeconds--);
+          } catch (e) {
+            timer.cancel();
+          }
+        } else {
+          timer.cancel();
+        }
       } else {
         timer.cancel();
-        if (Navigator.canPop(context)) {
+        if (mounted && Navigator.canPop(context)) {
           try {
             Navigator.pop(context);
             _showTimeoutAlert();

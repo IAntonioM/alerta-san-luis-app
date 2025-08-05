@@ -13,32 +13,30 @@ class DescripcionWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textFieldHeight = ResponsiveHelper.responsiveValue(
-      context,
-      mobile: 120.0,
-      smallTablet: 140.0,
-      largeTablet: 160.0,
-      desktop: 180.0,
-      largeDesktop: 200.0,
-    );
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Descripción',
           style: TextStyle(
-            fontSize: ResponsiveHelper.getTitleFontSize(context, base: 18),
+            fontSize: ResponsiveHelper.getFontSize(context, 18),
             fontWeight: FontWeight.w500,
             color: const Color(0xFF4C4547),
           ),
         ),
-        SizedBox(height: ResponsiveHelper.getFormFieldSpacing(context)),
+        SizedBox(height: ResponsiveHelper.getSpacing(context, base: 12)),
         Container(
-          height: textFieldHeight,
+          height: ResponsiveHelper.responsiveValue(
+            context,
+            mobile: 120.0,
+            tablet: 140.0,
+            desktop: 160.0,
+          ),
           decoration: BoxDecoration(
             color: Colors.grey.shade50,
-            borderRadius: ResponsiveHelper.getImageBorderRadius(context),
+            borderRadius: BorderRadius.circular(
+              ResponsiveHelper.getBorderRadius(context, base: 12),
+            ),
             border: Border.all(
               color: controller.text.isNotEmpty
                   ? const Color(0xFF099AD7)
@@ -52,21 +50,26 @@ class DescripcionWidget extends StatelessWidget {
             expands: true,
             textAlignVertical: TextAlignVertical.top,
             style: TextStyle(
-              fontSize: ResponsiveHelper.getBodyFontSize(context),
+              fontSize: ResponsiveHelper.getFontSize(context, 14),
               color: const Color(0xFF4C4547),
-              height: 1.4,
+              height: ResponsiveHelper.responsiveValue(
+                context,
+                mobile: 1.3,
+                tablet: 1.4,
+                desktop: 1.5,
+              ),
             ),
             decoration: InputDecoration(
               hintText: hintText ??
                   ResponsiveHelper.responsiveValue(
                     context,
                     mobile: 'Describe la situación...',
-                    desktop:
-                        'Describe detalladamente la situación reportada...',
+                    tablet: 'Describe detalladamente la situación...',
+                    desktop: 'Describe detalladamente la situación reportada...',
                   ),
               hintStyle: TextStyle(
                 color: const Color(0xFFAFB5B3),
-                fontSize: ResponsiveHelper.getBodyFontSize(context),
+                fontSize: ResponsiveHelper.getFontSize(context, 14),
               ),
               border: InputBorder.none,
               contentPadding: EdgeInsets.all(
