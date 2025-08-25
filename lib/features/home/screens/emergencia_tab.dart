@@ -35,7 +35,7 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
 
   // Colores
   static const Color _primaryColor = Color(0xFF1976D2);
-  static const Color _panicButtonColor = Color(0xFFFFD700);
+  static const Color _panicButtonColor = Color(0xFFFFECB3);
   static const Color _successColor = Color(0xFF4CAF50);
   static const Color _errorColor = Colors.red;
   static const Color _textColor = Color(0xFF333333);
@@ -133,7 +133,8 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
     final buttonHeight = ResponsiveHelper.getResponsiveSize(context, 250.0);
     final iconSize = ResponsiveHelper.getIconSize(context, base: 120);
     final titleFontSize = ResponsiveHelper.getTitleFontSize(context, base: 28);
-    final subtitleFontSize = ResponsiveHelper.getBodyFontSize(context, base: 16);
+    final subtitleFontSize =
+        ResponsiveHelper.getBodyFontSize(context, base: 16);
     final borderRadius = ResponsiveHelper.getBorderRadius(context, base: 16);
     final elevation = ResponsiveHelper.getElevation(context, base: 8);
 
@@ -156,10 +157,9 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.phone_in_talk,
-              size: iconSize,
-              color: _errorColor,
+            Image.asset(
+              'assets/imgs/boton-panico.png', 
+              height: iconSize, 
             ),
             SizedBox(height: ResponsiveHelper.getSpacing(context, base: 16)),
             Text(
@@ -308,8 +308,8 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
         description: 'Alerta de emergencia: ${menu.nomCategoria}',
         latitude: position.latitude,
         longitude: position.longitude,
-        userId: user.id,
-        citizenId: user.id,
+        userId: user.id.toString(),
+        citizenId: user.id.toString(),
         email: user.correo,
         phone: user.telefono,
         imageFile: null,
@@ -359,8 +359,8 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
         description: "ALERTA DE PÁNICO ACTIVADA - SOLICITA AYUDA INMEDIATA",
         latitude: position.latitude,
         longitude: position.longitude,
-        userId: user.id,
-        citizenId: user.id,
+        userId: user.id.toString(),
+        citizenId: user.id.toString(),
         email: user.correo,
         phone: user.telefono,
         imageFile: null,
@@ -421,7 +421,7 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
     }
   }
 
-  // Conexión con Socket
+  // Conexión con Socket - MODIFICADO
   Future<void> _connectSocket() async {
     final userId = await UserStorageService.getUserId();
     if (userId == null) {
@@ -433,11 +433,13 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
       return;
     }
 
+    // Asegúrate de que se conecte con el ID como string
     SocketService.connect(userId.toString());
     await Future.delayed(_socketConnectionDelay);
     SocketService.testConnection();
 
-    SocketService.onAlertaAceptada((_) {
+    SocketService.onAlertaAceptada((data) {
+
       _countdownTimer?.cancel();
       if (Navigator.canPop(context)) {
         Navigator.pop(context);
@@ -445,7 +447,7 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
       }
     });
 
-    SocketService.onAlertaNoRespondida((_) {
+    SocketService.onAlertaNoRespondida((data) {
       _countdownTimer?.cancel();
       if (Navigator.canPop(context)) {
         Navigator.pop(context);
@@ -496,12 +498,14 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 const CircularProgressIndicator(color: _primaryColor),
-                SizedBox(height: ResponsiveHelper.getSpacing(context, base: 16)),
+                SizedBox(
+                    height: ResponsiveHelper.getSpacing(context, base: 16)),
                 Text(
                   'Estamos a la espera de una respuesta del personal de seguridad.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: ResponsiveHelper.getBodyFontSize(context, base: 16),
+                    fontSize:
+                        ResponsiveHelper.getBodyFontSize(context, base: 16),
                     color: _textColor,
                   ),
                 ),
@@ -509,7 +513,8 @@ class _EmergenciaTabState extends State<EmergenciaTab> {
                 Text(
                   'Tiempo restante: $_remainingSeconds segundos',
                   style: TextStyle(
-                    fontSize: ResponsiveHelper.getBodyFontSize(context, base: 14),
+                    fontSize:
+                        ResponsiveHelper.getBodyFontSize(context, base: 14),
                     fontWeight: FontWeight.bold,
                     color: _primaryColor,
                   ),

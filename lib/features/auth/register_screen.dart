@@ -321,8 +321,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         // Enlace a login
                         _buildLoginLink(),
 
+                        // Bottom spacing
                         SizedBox(
-                          height: ResponsiveHelper.getSpacing(context, base: 32),
+                          height: ResponsiveHelper.getSpacing(context, base: 60),
                         ),
                       ],
                     ),

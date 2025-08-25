@@ -113,15 +113,7 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
   }
 
   void _handleCardTap(MenuCategory menu) {
-    if (menu.nomCategoria.toLowerCase().contains('alerta')) {
-      // Acción para alerta rápida
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${menu.nomCategoria} activada'),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    } else {
+    
       // Navegar al formulario
       Navigator.push(
         context,
@@ -132,7 +124,6 @@ class _IncidenciasTabState extends State<IncidenciasTab> {
           ),
         ),
       );
-    }
   }
 
   Color _getColorForCategory(String categoryName) {

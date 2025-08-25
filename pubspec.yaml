@@ -2,7 +2,7 @@ name: boton_panico_app
 description: "A new Flutter project."
 publish_to: 'none' 
 
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.6.0
@@ -46,3 +46,5 @@ flutter:
     - assets/imgs/muni_logo.png
     - assets/imgs/logo-default.png
     - assets/imgs/logo.png
+    - assets/imgs/boton-panico.png
+    - assets/imgs/boton-panico1.png

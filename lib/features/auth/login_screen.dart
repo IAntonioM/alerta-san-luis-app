@@ -128,14 +128,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      SizedBox(
+                        height: ResponsiveHelper.getSpacing(context, base: 20),
+                      ),
                       // Logo - usando getResponsiveSize
                       Image.asset(
                         'assets/imgs/logo.png',
-                        height: ResponsiveHelper.getResponsiveSize(context, 120),
+                        height:
+                            ResponsiveHelper.getResponsiveSize(context, 120),
                         fit: BoxFit.contain,
                       ),
                       SizedBox(
-                        height: ResponsiveHelper.getSpacing(context, base: 40),
+                        height: ResponsiveHelper.getSpacing(context, base: 10),
                       ),
                       // Title - usando getFontSize
                       Text(
@@ -148,15 +152,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                    ],
-                  ),
-                ),
 
-                // Form section
-                Expanded(
-                  child: Column(
-                    children: [
-                      // Email TextField
+                      SizedBox(
+                        height: ResponsiveHelper.getSpacing(context, base: 20),
+                      ),
+
                       SizedBox(
                         height: ResponsiveHelper.getResponsiveSize(context, 60),
                         child: TextFormField(
@@ -171,7 +171,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             hintText: 'Correo electrónico',
                             hintStyle: TextStyle(
                               color: const Color.fromARGB(255, 255, 255, 255),
-                              fontSize: ResponsiveHelper.getFontSize(context, 16),
+                              fontSize:
+                              ResponsiveHelper.getFontSize(context, 16),
                             ),
                             border: UnderlineInputBorder(
                               borderSide: BorderSide(
@@ -190,7 +191,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: ResponsiveHelper.getSpacing(context, base: 16),
+                              vertical: ResponsiveHelper.getSpacing(context,
+                                  base: 16),
                             ),
                           ),
                         ),
@@ -215,7 +217,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             hintText: 'Contraseña',
                             hintStyle: TextStyle(
                               color: const Color.fromARGB(255, 255, 255, 255),
-                              fontSize: ResponsiveHelper.getFontSize(context, 16),
+                              fontSize:
+                              ResponsiveHelper.getFontSize(context, 16),
                             ),
                             border: UnderlineInputBorder(
                               borderSide: BorderSide(
@@ -234,7 +237,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: ResponsiveHelper.getSpacing(context, base: 16),
+                              vertical: ResponsiveHelper.getSpacing(context,
+                                  base: 16),
                             ),
                           ),
                         ),
@@ -269,8 +273,10 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: _isLoading
                               ? SizedBox(
-                            height: ResponsiveHelper.getResponsiveSize(context, 20),
-                            width: ResponsiveHelper.getResponsiveSize(context, 20),
+                            height: ResponsiveHelper.getResponsiveSize(
+                                context, 20),
+                            width: ResponsiveHelper.getResponsiveSize(
+                                context, 20),
                             child: const CircularProgressIndicator(
                               color: Colors.white,
                               strokeWidth: 2,
@@ -279,7 +285,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               : Text(
                             'Ingresar',
                             style: TextStyle(
-                              fontSize: ResponsiveHelper.getFontSize(context, 16),
+                              fontSize: ResponsiveHelper.getFontSize(
+                                  context, 16),
                               fontWeight: FontWeight.w500,
                               letterSpacing: 0.5,
                             ),
@@ -298,8 +305,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         },
                         style: TextButton.styleFrom(
                           padding: EdgeInsets.symmetric(
-                            vertical: ResponsiveHelper.getSpacing(context, base: 12),
-                            horizontal: ResponsiveHelper.getSpacing(context, base: 16),
+                            vertical:
+                            ResponsiveHelper.getSpacing(context, base: 12),
+                            horizontal:
+                            ResponsiveHelper.getSpacing(context, base: 16),
                           ),
                         ),
                         child: Text(
@@ -312,14 +321,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           textAlign: TextAlign.center,
                         ),
                       ),
+
                     ],
                   ),
                 ),
 
-                // Bottom spacing
-                SizedBox(
-                  height: ResponsiveHelper.getSpacing(context, base: 60),
-                ),
               ],
             ),
           ),

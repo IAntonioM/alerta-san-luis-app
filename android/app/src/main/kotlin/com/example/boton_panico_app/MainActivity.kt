@@ -1,4 +1,4 @@
-package com.example.boton_panico_app
+package com.munisanluis.boton_panico_app
 
 import io.flutter.embedding.android.FlutterActivity
 

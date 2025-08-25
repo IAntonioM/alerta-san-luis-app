@@ -44,14 +44,14 @@ class HomeScreen extends StatelessWidget {
             children: [
               // Logo de la municipalidad
               Image.asset(
-                'assets/imgs/muni_logo.png',
+                'assets/imgs/logo-default.png',
                 height: ResponsiveHelper.getIconSize(context, base: 70),
                 fit: BoxFit.contain,
               ),
               // Logo de la app
               Image.asset(
                 'assets/imgs/logo.png',
-                height: ResponsiveHelper.getIconSize(context, base: 80),
+                height: ResponsiveHelper.getIconSize(context, base: 100),
                 fit: BoxFit.contain,
               ),
             ],
