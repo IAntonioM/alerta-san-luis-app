@@ -34,7 +34,7 @@ class _AudioWidgetState extends State<AudioWidget>
   late AnimationController _waveController;
 
   // Record y AudioPlayer
-  final AudioRecorder _recorder = AudioRecorder();
+  final Record _recorder = Record();
   final AudioPlayer _player = AudioPlayer();
 
   // Timer para el contador
@@ -234,12 +234,9 @@ class _AudioWidgetState extends State<AudioWidget>
       debugPrint('Iniciando grabación en: $audioPath');
 
       await _recorder.start(
-        const RecordConfig(
-          encoder: AudioEncoder.aacLc,
-          bitRate: 128000,
-          sampleRate: 44100,
-        ),
         path: audioPath,
+        encoder: AudioEncoder.aacLc,
+        bitRate: 128000,
       );
 
       setState(() {
