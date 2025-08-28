@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_sound/flutter_sound.dart';
+import 'package:record/record.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../../utils/responsive_helper.dart';
@@ -32,13 +33,13 @@ class _AudioWidgetState extends State<AudioWidget>
   late AnimationController _pulseController;
   late AnimationController _waveController;
 
-  // Flutter Sound
-  FlutterSoundRecorder? _recorder;
-  FlutterSoundPlayer? _player;
+  // Record y AudioPlayer
+  final AudioRecorder _recorder = AudioRecorder();
+  final AudioPlayer _player = AudioPlayer();
 
   // Timer para el contador
   Timer? _recordingTimer;
-  Timer? _playbackTimer;
+  StreamSubscription? _playerSubscription;
 
   String? _currentAudioPath;
 
@@ -59,43 +60,67 @@ class _AudioWidgetState extends State<AudioWidget>
     if (widget.audioPath != null) {
       _audioState = AudioState.recorded;
       _currentAudioPath = widget.audioPath;
+      _getTotalDuration();
     }
   }
 
   Future<void> _initializeAudio() async {
     try {
-      _recorder = FlutterSoundRecorder();
-      _player = FlutterSoundPlayer();
+      // Configurar el listener para el progreso de reproducción
+      _player.onPositionChanged.listen((position) {
+        if (mounted && _audioState == AudioState.playing) {
+          setState(() {
+            _playbackDuration = position;
+          });
+        }
+      });
 
-      final hasPermissions = await _requestPermissions();
-      if (!hasPermissions) {
-        debugPrint('No se pudieron obtener permisos, inicialización parcial');
-        await _player!.openPlayer();
-        return;
-      }
+      // Configurar el listener para cuando termina la reproducción
+      _player.onPlayerComplete.listen((_) {
+        if (mounted) {
+          setState(() {
+            _audioState = AudioState.recorded;
+            _playbackDuration = Duration.zero;
+          });
+          _waveController.stop();
+        }
+      });
 
-      await _recorder!.openRecorder();
-      await _player!.openPlayer();
       debugPrint('Audio inicializado correctamente');
     } catch (e) {
       debugPrint('Error inicializando audio: $e');
     }
   }
 
+  Future<void> _getTotalDuration() async {
+    if (_currentAudioPath != null) {
+      try {
+        final duration = await _player.getDuration();
+        if (duration != null) {
+          setState(() {
+            _totalDuration = duration;
+          });
+        }
+      } catch (e) {
+        debugPrint('Error obteniendo duración: $e');
+      }
+    }
+  }
+
   @override
   void dispose() {
     _recordingTimer?.cancel();
-    _playbackTimer?.cancel();
+    _playerSubscription?.cancel();
     _pulseController.dispose();
     _waveController.dispose();
-    _recorder?.closeRecorder();
-    _player?.closePlayer();
+    _recorder.dispose();
+    _player.dispose();
     super.dispose();
   }
 
   Future<String> _getAudioPath() async {
     final directory = await getApplicationDocumentsDirectory();
-    final fileName = 'audio_${DateTime.now().millisecondsSinceEpoch}.aac';
+    final fileName = 'audio_${DateTime.now().millisecondsSinceEpoch}.m4a';
     return '${directory.path}/$fileName';
   }
 
@@ -194,22 +219,27 @@ class _AudioWidgetState extends State<AudioWidget>
 
   Future<void> _startRecording() async {
     try {
-      if (_recorder == null) {
-        _showErrorDialog('El grabador no está inicializado');
+      final hasPermissions = await _requestPermissions();
+      if (!hasPermissions) {
         return;
       }
 
-      final hasPermissions = await _requestPermissions();
-      if (!hasPermissions) {
+      // Verificar si el dispositivo tiene micrófono
+      if (!(await _recorder.hasPermission())) {
+        _showErrorDialog('No se tienen permisos para grabar audio');
         return;
       }
 
       final audioPath = await _getAudioPath();
       debugPrint('Iniciando grabación en: $audioPath');
 
-      await _recorder!.startRecorder(
-        toFile: audioPath,
-        codec: Codec.aacADTS,
+      await _recorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: audioPath,
       );
 
       setState(() {
@@ -241,7 +271,7 @@ class _AudioWidgetState extends State<AudioWidget>
 
   Future<void> _pauseRecording() async {
     try {
-      await _recorder!.pauseRecorder();
+      await _recorder.pause();
       setState(() {
         _audioState = AudioState.paused;
       });
@@ -255,7 +285,7 @@ class _AudioWidgetState extends State<AudioWidget>
 
   Future<void> _resumeRecording() async {
     try {
-      await _recorder!.resumeRecorder();
+      await _recorder.resume();
       setState(() {
         _audioState = AudioState.recording;
       });
@@ -277,12 +307,13 @@ class _AudioWidgetState extends State<AudioWidget>
 
   Future<void> _stopRecording() async {
     try {
-      await _recorder!.stopRecorder();
+      final path = await _recorder.stop();
       _recordingTimer?.cancel();
 
       setState(() {
         _audioState = AudioState.recorded;
         _totalDuration = _recordingDuration;
+        _currentAudioPath = path;
       });
 
       _pulseController.stop();
@@ -306,30 +337,12 @@ class _AudioWidgetState extends State<AudioWidget>
 
       _waveController.repeat();
 
-      await _player!.startPlayer(
-        fromURI: _currentAudioPath,
-        whenFinished: () {
-          if (mounted) {
-            setState(() {
-              _audioState = AudioState.recorded;
-              _playbackDuration = Duration.zero;
-            });
-            _waveController.stop();
-            _playbackTimer?.cancel();
-          }
-        },
-      );
+      // Obtener duración total si no la tenemos
+      if (_totalDuration == Duration.zero) {
+        await _getTotalDuration();
+      }
 
-      _playbackTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-        if (mounted && _audioState == AudioState.playing) {
-          setState(() {
-            _playbackDuration = Duration(milliseconds: timer.tick * 100);
-            if (_playbackDuration >= _totalDuration) {
-              _playbackDuration = _totalDuration;
-            }
-          });
-        }
-      });
+      await _player.play(DeviceFileSource(_currentAudioPath!));
     } catch (e) {
       debugPrint('Error al reproducir audio: $e');
       setState(() {
@@ -341,8 +354,7 @@ class _AudioWidgetState extends State<AudioWidget>
 
   Future<void> _stopPlaying() async {
     try {
-      await _player!.stopPlayer();
-      _playbackTimer?.cancel();
+      await _player.stop();
 
       setState(() {
         _audioState = AudioState.recorded;
