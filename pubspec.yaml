@@ -16,7 +16,7 @@ dependencies:
   flutter_lints: ^5.0.0
   flutter_rating_bar: ^4.0.0
   record: ^4.4.4                  
-  audioplayers: ^3.0.1
+  just_audio: ^0.9.34
   geolocator: ^10.1.0
   http: ^1.1.0
   image: ^4.1.7
