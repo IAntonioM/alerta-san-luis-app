@@ -76,8 +76,8 @@ class _AudioWidgetState extends State<AudioWidget>
       });
 
       // Configurar el listener para cuando termina la reproducción
-      _player.onPlayerComplete.listen((_) {
-        if (mounted) {
+      _player.onPlayerStateChanged.listen((state) {
+        if (mounted && state == PlayerState.completed) {
           setState(() {
             _audioState = AudioState.recorded;
             _playbackDuration = Duration.zero;
