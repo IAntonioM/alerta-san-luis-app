@@ -22,7 +22,7 @@ class AudioWidget extends StatefulWidget {
   @override
   State<AudioWidget> createState() => _AudioWidgetState();
 }
-//hola
+
 class _AudioWidgetState extends State<AudioWidget>
     with TickerProviderStateMixin {
   AudioState _audioState = AudioState.idle;
@@ -43,6 +43,11 @@ class _AudioWidgetState extends State<AudioWidget>
 
   String? _currentAudioPath;
   bool _isPaused = false;
+
+  // Stream subscriptions para audioplayers 6.5.0
+  StreamSubscription<Duration>? _durationSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<PlayerState>? _playerStateSubscription;
 
   @override
   void initState() {
@@ -70,9 +75,45 @@ class _AudioWidgetState extends State<AudioWidget>
       _recorder = AudioRecorder();
       _player = AudioPlayer();
       
-      // Configurar listener para cuando termine la reproducción
-      _player.onPlayerComplete.listen((_) {
-        _onPlaybackComplete();
+      // Configurar listeners para audioplayers 6.5.0
+      _playerStateSubscription = _player.onPlayerStateChanged.listen((PlayerState state) {
+        switch (state) {
+          case PlayerState.completed:
+            _onPlaybackComplete();
+            break;
+          case PlayerState.stopped:
+            if (_audioState == AudioState.playing) {
+              _onPlaybackComplete();
+            }
+            break;
+          case PlayerState.playing:
+            // El audio está reproduciéndose
+            break;
+          case PlayerState.paused:
+            // El audio está pausado
+            break;
+          case PlayerState.disposed:
+            // El reproductor ha sido disposed
+            break;
+        }
+      });
+
+      // Listener para la posición del audio
+      _positionSubscription = _player.onPositionChanged.listen((Duration position) {
+        if (mounted && _audioState == AudioState.playing) {
+          setState(() {
+            _playbackDuration = position;
+          });
+        }
+      });
+
+      // Listener para la duración total del audio
+      _durationSubscription = _player.onDurationChanged.listen((Duration duration) {
+        if (mounted) {
+          setState(() {
+            _totalDuration = duration;
+          });
+        }
       });
       
       debugPrint('Audio inicializado correctamente');
@@ -84,15 +125,9 @@ class _AudioWidgetState extends State<AudioWidget>
   Future<void> _loadAudioDuration() async {
     if (_currentAudioPath != null) {
       try {
-        // Obtener duración del archivo
-        await _player.setSource(DeviceFileSource(_currentAudioPath!));
-        final duration = await _player.getDuration();
-        if (duration != null) {
-          setState(() {
-            _totalDuration = duration;
-          });
-        }
-        debugPrint('Duración cargada: $_totalDuration');
+        // En audioplayers 6.5.0, setSourceDeviceFile reemplaza a setSource con DeviceFileSource
+        await _player.setSourceDeviceFile(_currentAudioPath!);
+        debugPrint('Archivo de audio cargado para obtener duración');
       } catch (e) {
         debugPrint('Error cargando duración: $e');
       }
@@ -103,6 +138,12 @@ class _AudioWidgetState extends State<AudioWidget>
   void dispose() {
     _recordingTimer?.cancel();
     _playbackTimer?.cancel();
+    
+    // Cancelar las suscripciones de audioplayers 6.5.0
+    _durationSubscription?.cancel();
+    _positionSubscription?.cancel();
+    _playerStateSubscription?.cancel();
+    
     _pulseController.dispose();
     _waveController.dispose();
     _recorder.dispose();
@@ -336,34 +377,8 @@ class _AudioWidgetState extends State<AudioWidget>
 
       _waveController.repeat();
       
-      // Reproducir con audioplayers
+      // En audioplayers 6.5.0, usar play con Source.deviceFile
       await _player.play(DeviceFileSource(_currentAudioPath!));
-
-      // Timer para trackear progreso manualmente
-      _playbackTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) async {
-        if (mounted && _audioState == AudioState.playing) {
-          try {
-            final position = await _player.getCurrentPosition();
-            final duration = await _player.getDuration();
-            
-            if (position != null && duration != null) {
-              setState(() {
-                _playbackDuration = position;
-                if (_totalDuration == Duration.zero) {
-                  _totalDuration = duration;
-                }
-              });
-
-              // Verificar si terminó la reproducción
-              if (position.inMilliseconds >= duration.inMilliseconds - 100) {
-                _onPlaybackComplete();
-              }
-            }
-          } catch (e) {
-            debugPrint('Error obteniendo posición: $e');
-          }
-        }
-      });
 
       debugPrint('Reproducción iniciada');
     } catch (e) {
