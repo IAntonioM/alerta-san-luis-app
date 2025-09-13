@@ -34,7 +34,7 @@ dependency_overrides:
     git:
       url: https://github.com/llfbandit/record.git
       path: record_linux
-      ref: main
+      ref: master
 
 dev_dependencies:
   flutter_test:
