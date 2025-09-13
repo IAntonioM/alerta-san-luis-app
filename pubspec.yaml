@@ -18,8 +18,7 @@ dependencies:
   cached_network_image: ^3.3.1
   cupertino_icons: ^1.0.8
   flutter_rating_bar: ^4.0.0
-  record: ^5.0.4
-  audioplayers: ^6.5.0
+  flutter_sound: ^9.28.0
   geolocator: ^10.1.0
   http: ^1.1.0
   image: ^4.1.7
