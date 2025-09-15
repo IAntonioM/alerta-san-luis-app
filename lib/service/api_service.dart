@@ -3,8 +3,7 @@ import 'package:boton_panico_app/service/user_storage_service.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // Nueva URL base según la documentación
-  static const String baseUrl = 'http://161.132.177.168:8000';
+  static const String baseUrl = 'https://161.132.177.168:8000';
 
   static Map<String, String> get headers => {
         'Content-Type': 'application/json',
