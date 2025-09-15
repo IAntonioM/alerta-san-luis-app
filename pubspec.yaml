@@ -7,15 +7,19 @@ version: 1.0.0+2
 environment:
   sdk: ^3.6.0
 
+platforms:
+  android:
+  ios:
+
 dependencies:
   flutter:
     sdk: flutter
 
   cached_network_image: ^3.3.1
   cupertino_icons: ^1.0.8
-  flutter_lints: ^5.0.0
   flutter_rating_bar: ^4.0.0
-  flutter_sound: ^9.2.13
+  record: ^5.1.0
+  assets_audio_player: ^3.1.1
   geolocator: ^10.1.0
   http: ^1.1.0
   image: ^4.1.7
@@ -29,6 +33,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   
+  flutter_lints: ^5.0.0
   flutter_launcher_icons: ^0.13.1
 
 flutter_launcher_icons:
