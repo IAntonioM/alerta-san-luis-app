@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // Nueva URL base según la documentación
-  static const String baseUrl = 'https://botonalerta.munisanluis.gob.pe:8000';
+  static const String baseUrl = 'http://botonalerta.munisanluis.gob.pe:8000';
 
   static Map<String, String> get headers => {
         'Content-Type': 'application/json',
