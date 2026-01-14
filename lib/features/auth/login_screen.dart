@@ -322,6 +322,22 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
 
+                      SizedBox(
+                        height: ResponsiveHelper.getSpacing(context, base: 24),
+                      ),
+
+                      // Aviso
+                      Text(
+                        'Aviso: Esta aplicación usa tu localización en segundo plano para mandar la alerta a las autoridades.',
+                        style: TextStyle(
+                          fontSize: ResponsiveHelper.getFontSize(context, 16),
+                          fontWeight: FontWeight.w300,
+                          color: const Color.fromARGB(255, 255, 255, 255),
+                          letterSpacing: 0.5,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+
                     ],
                   ),
                 ),
