@@ -34,17 +34,17 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/imgs/logo.png"
+  image_path: "assets/imgs/logo.jpg"
 
 flutter:
   uses-material-design: true
 
   assets:
-    - assets/imgs/logo.png
+    - assets/imgs/logo.jpg
     - assets/imgs/background.jpg
     - assets/imgs/background-login.jpg
     - assets/imgs/muni_logo.png
     - assets/imgs/logo-default.png
-    - assets/imgs/logo.png
+    - assets/imgs/logo.jpg
     - assets/imgs/boton-panico.png
     - assets/imgs/boton-panico1.png

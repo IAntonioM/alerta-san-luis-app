@@ -50,7 +50,7 @@ class HomeScreen extends StatelessWidget {
               ),
               // Logo de la app
               Image.asset(
-                'assets/imgs/logo.png',
+                'assets/imgs/logo.jpg',
                 height: ResponsiveHelper.getIconSize(context, base: 100),
                 fit: BoxFit.contain,
               ),

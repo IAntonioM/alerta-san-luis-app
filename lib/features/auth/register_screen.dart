@@ -354,7 +354,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Expanded(
               child: Center(
                 child: Image.asset(
-                  'assets/imgs/logo.png',
+                  'assets/imgs/logo.jpg',
                   height: ResponsiveHelper.getResponsiveSize(context, 100),
                   fit: BoxFit.contain,
                 ),

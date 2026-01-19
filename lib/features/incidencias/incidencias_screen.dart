@@ -506,7 +506,7 @@ class _IncidenciaFormScreenState extends State<IncidenciaFormScreen> {
                   height: ResponsiveHelper.getIconSize(context, base: 50),
                 ),
                 Image.asset(
-                  'assets/imgs/logo.png',
+                  'assets/imgs/logo.jpg',
                   height: ResponsiveHelper.getIconSize(context, base: 80),
                 ),
               ],
