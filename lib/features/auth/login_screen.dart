@@ -133,7 +133,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       // Logo - usando getResponsiveSize
                       Image.asset(
-                        'assets/imgs/logo.jpg',
+                        'assets/imgs/logo.png',
                         height:
                             ResponsiveHelper.getResponsiveSize(context, 120),
                         fit: BoxFit.contain,

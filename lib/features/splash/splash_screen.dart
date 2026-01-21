@@ -130,7 +130,7 @@ class _SplashScreenState extends State<SplashScreen>
                             ),
                           ),
                           child: Image.asset(
-                            "assets/imgs/logo.jpg",
+                            "assets/imgs/logo.png",
                             width: ResponsiveHelper.responsiveValue(
                               context,
                               mobile: ResponsiveHelper.getScreenWidth(context) *
